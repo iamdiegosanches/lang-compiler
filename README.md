@@ -1,7 +1,7 @@
 # lang-compiler
 Compilador para a linguagem lang
 
-
+```
 lang-compiler/
 ├── src/                     # Código fonte principal
 │   ├── main/
@@ -19,3 +19,4 @@ lang-compiler/
 │   └── test1.lang
 ├── Makefile                 # Makefile para automatizar compilação e execução
 └── README.md                # Descrição do projeto
+```
