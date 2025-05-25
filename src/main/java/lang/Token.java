@@ -24,8 +24,8 @@ public class Token extends Symbol {
 
         // Operadores e Pontuação
         ASSIGN, PLUS, MINUS, MULTIPLY, DIVIDE, MODULO, AND, NOT,
-        LESS_THAN, EQUALS, NOT_EQUALS, LPAREN, RPAREN, LBRACK, RBRACK,
-        LBRACE, RBRACE, COMMA, SEMICOLON, DOT,
+        LESS_THAN, MORE_THAN, EQUALS, NOT_EQUALS, LPAREN, RPAREN, LBRACK, RBRACK,
+        LBRACE, RBRACE, COMMA, SEMICOLON, DOT, DOUBLE_DOT,
 
         // Fim de Arquivo
         EOF, ERROR

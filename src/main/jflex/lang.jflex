@@ -83,6 +83,7 @@ CommentBlock = "/*" [^*] ~"*/" | "/*" "*"+ "/"
     "&&"        { return symbol(Token.TokenType.AND); }
     "!"         { return symbol(Token.TokenType.NOT); }
     "<"         { return symbol(Token.TokenType.LESS_THAN); }
+    ">"         { return symbol(Token.TokenType.MORE_THAN); }
     "=="        { return symbol(Token.TokenType.EQUALS); }
     "!="        { return symbol(Token.TokenType.NOT_EQUALS); }
     "("         { return symbol(Token.TokenType.LPAREN); }
@@ -94,6 +95,7 @@ CommentBlock = "/*" [^*] ~"*/" | "/*" "*"+ "/"
     ","         { return symbol(Token.TokenType.COMMA); }
     ";"         { return symbol(Token.TokenType.SEMICOLON); }
     "."         { return symbol(Token.TokenType.DOT); }
+    ":"         { return symbol(Token.TokenType.DOUBLE_DOT); }
 
     // Comentários e Espaços em Branco
     {CommentLine}   { /* Ignorar */ }
