@@ -1,4 +1,0 @@
-main(){
-  -- Uma linha de comentario
-  x = '\n';
-}
