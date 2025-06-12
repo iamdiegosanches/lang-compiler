@@ -16,9 +16,6 @@ public class LangCompiler {
                 t = lex.nextToken();
             }
             System.out.println(t.toString());
-        } else if (args.length == 1) {
-            LangLex lex = new LangLex(new FileReader(args[0]));
-            while (lex.nextToken().tk != TK.EOF);
         } else {
             System.out.println("Uso: java LangCompiler [-lex] <arquivo>");
         }
