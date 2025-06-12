@@ -1,16 +1,25 @@
+///////////////////////////////////////////////////////////////////////
+/// Álvaro Braz Cunha - 21.1.8163                                   ///
+/// Diego Sanches Nere dos Santos - 21.1.8003                       ///
+///////////////////////////////////////////////////////////////////////
+
+
 public enum TK {
-    // Literais
+    // Literals
     INT,
     FLOAT,
     CHAR,
-    BOOL,
     NULL,
+    BOOL,
 
-    // Identificadores
+    TRUE,
+    FALSE,
+
+    // Identifiers
     ID,       // identificadores normais (começam com minúscula)
     TYID,     // nomes de tipo (começam com maiúscula)
 
-    // Palavras-chave
+    // Keywords
     DATA,
     ABSTRACT,
     IF,
@@ -21,31 +30,31 @@ public enum TK {
     ITERATE,
     NEW,
 
-    // Símbolos e Operadores
-    PV,       // ;
-    DP,       // :
-    DPTP,     // ::
-    VIRG,     // ,
-    AP,       // (
-    FP,       // )
-    AC,       // {
-    FC,       // }
-    MENOR,    // <
-    MAIOR,    // >
-    MAIS,     // +
-    MENOS,    // -
-    VEZES,    // *
-    DIV,      // /
-    MOD,      // %
-    IGUAL,    // =
-    DIF,      // !=
-    IGUALIGUAL, // ==
+    // Symbols and Operators
+    SEMICOLON, // ;
+    COLON,     // :
+    DOUBLE_COLON, // ::
+    COMMA,     // ,
+    OPEN_PAREN, // (
+    CLOSE_PAREN, // )
+    OPEN_BRACE, // {
+    CLOSE_BRACE, // }
+    LESS_THAN,    // <
+    GREATER_THAN, // >
+    PLUS,     // +
+    MINUS,    // -
+    MULT, // *
+    DIV,   // /
+    MOD,   // %
+    ASSIGN,   // =
+    NOT_EQUAL, // !=
+    EQUAL_EQUAL, // ==
     AND,      // &&
     NOT,      // !
-    PONTO,    // .
-    ABCOL,    // [
-    FECOL,    // ]
+    DOT,      // .
+    OPEN_BRACKET, // [
+    CLOSE_BRACKET, // ]
 
-    // Fim de arquivo
+    // End of File
     EOF
 }

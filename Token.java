@@ -1,3 +1,7 @@
+///////////////////////////////////////////////////////////////////////
+/// Álvaro Braz Cunha - 21.1.8163                                   ///
+/// Diego Sanches Nere dos Santos - 21.1.8003                       ///
+///////////////////////////////////////////////////////////////////////
 
 public class Token {
     public Object value;
@@ -21,29 +25,29 @@ public class Token {
             return "(" + line + " ," + column + ") " + tk + " " + value;
         
         switch (tk) {
-            case PV: return "(" + line + " ," + column + ") ;";
-            case MAIS: return "(" + line + " ," + column + ") +";
-            case MENOS: return "(" + line + " ," + column + ") -";
-            case VEZES: return "(" + line + " ," + column + ") *";
+            case SEMICOLON: return "(" + line + " ," + column + ") ;";
+            case PLUS: return "(" + line + " ," + column + ") +";
+            case MINUS: return "(" + line + " ," + column + ") -";
+            case MULT: return "(" + line + " ," + column + ") *";
             case DIV: return "(" + line + " ," + column + ") /";
             case MOD: return "(" + line + " ," + column + ") %";
-            case IGUAL: return "(" + line + " ," + column + ") =";
-            case IGUALIGUAL: return "(" + line + " ," + column + ") ==";
-            case DIF: return "(" + line + " ," + column + ") !=";
+            case ASSIGN: return "(" + line + " ," + column + ") =";
+            case EQUAL_EQUAL: return "(" + line + " ," + column + ") ==";
+            case NOT_EQUAL: return "(" + line + " ," + column + ") !=";
             case AND: return "(" + line + " ," + column + ") &&";
             case NOT: return "(" + line + " ," + column + ") !";
-            case DP: return "(" + line + " ," + column + ") :";
-            case DPTP: return "(" + line + " ," + column + ") ::";
-            case PONTO: return "(" + line + " ," + column + ") .";
-            case VIRG: return "(" + line + " ," + column + ") ,";
-            case AP: return "(" + line + " ," + column + ") (";
-            case FP: return "(" + line + " ," + column + ") )";
-            case AC: return "(" + line + " ," + column + ") {";
-            case FC: return "(" + line + " ," + column + ") }";
-            case ABCOL: return "(" + line + " ," + column + ") [";
-            case FECOL: return "(" + line + " ," + column + ") ]";
-            case MENOR: return "(" + line + " ," + column + ") <";
-            case MAIOR: return "(" + line + " ," + column + ") >";
+            case COLON: return "(" + line + " ," + column + ") :";
+            case DOUBLE_COLON: return "(" + line + " ," + column + ") ::";
+            case DOT: return "(" + line + " ," + column + ") .";
+            case COMMA: return "(" + line + " ," + column + ") ,";
+            case OPEN_PAREN: return "(" + line + " ," + column + ") (";
+            case CLOSE_PAREN: return "(" + line + " ," + column + ") )";
+            case OPEN_BRACE: return "(" + line + " ," + column + ") {";
+            case CLOSE_BRACE: return "(" + line + " ," + column + ") }";
+            case OPEN_BRACKET: return "(" + line + " ," + column + ") [";
+            case CLOSE_BRACKET: return "(" + line + " ," + column + ") ]";
+            case LESS_THAN: return "(" + line + " ," + column + ") <";
+            case GREATER_THAN: return "(" + line + " ," + column + ") >";
             case EOF: return "(" + line + " ," + column + ") EOF";
             default: return "(" + line + " ," + column + ") " + tk;
         }

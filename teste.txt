@@ -46,3 +46,23 @@ read
 print
 if
 else
+boolean
+
+-- testes de float (e comentário)
+{-
+multiplas
+linhas
+-}
+
+Bool
+INT
+Int
+CHAR
+
+print
+iterate
+if
+else
+read
+iterate
+new
