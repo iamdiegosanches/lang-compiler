@@ -30,19 +30,6 @@
         return 0;
     }
 
-    private char escape2Char(String s) {
-        switch (s.charAt(2)) {
-            case 'n': return '\n';
-            case 't': return '\t';
-            case 'b': return '\b';
-            case 'r': return '\r';
-            case '\'': return '\'';
-            case '\"': return '\"';
-            case '\\': return '\\';
-            default: throw new Error("Caractere de escape inválido: " + s);
-        }
-    }
-
     public Token mkTk(TK tk){
         return new Token(tk, yyline + 1, yycolumn + 1);
     }
@@ -116,7 +103,6 @@ WHITE =  [ \n\t\r]+
     {INT}       { return mkTk(TK.INT, str2int(yytext())); }
     {FLOAT}     { return mkTk(TK.FLOAT, str2float(yytext())); }
     {CHAR}      { return mkTk(TK.CHAR, yytext()); }
-    {ESCAPE}    { return mkTk(TK.CHAR, escape2Char(yytext())); }
 
     // Identificadores
     {ID}        { return mkTk(TK.ID, yytext()); }
