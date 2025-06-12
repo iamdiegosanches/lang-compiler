@@ -5,21 +5,24 @@
 
 
 public enum TK {
-    // Literals
     INT,
     FLOAT,
     CHAR,
     NULL,
-    BOOL,
-
     TRUE,
     FALSE,
 
-    // Identifiers
+    // Type
+    INT_TYPE,
+    CHAR_TYPE,
+    BOOL_TYPE,
+    FLOAT_TYPE,
+
+    // Itendificadores
     ID,       // identificadores normais (começam com minúscula)
     TYID,     // nomes de tipo (começam com maiúscula)
 
-    // Keywords
+    // Palavras chave
     DATA,
     ABSTRACT,
     IF,
@@ -30,7 +33,7 @@ public enum TK {
     ITERATE,
     NEW,
 
-    // Symbols and Operators
+    // Simbolos e operadores
     SEMICOLON, // ;
     COLON,     // :
     DOUBLE_COLON, // ::
@@ -55,6 +58,6 @@ public enum TK {
     OPEN_BRACKET, // [
     CLOSE_BRACKET, // ]
 
-    // End of File
+    // Fim
     EOF
 }

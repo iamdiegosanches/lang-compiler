@@ -67,12 +67,13 @@ WHITE =  [ \n\t\r]+
 
 %%
 <YYINITIAL>{
-    "Int"       { return mkTk(TK.INT); }
-    "Char"      { return mkTk(TK.CHAR); }
-    "Bool"      { return mkTk(TK.BOOL); }
-    "Float"     { return mkTk(TK.FLOAT); }
+    "Int"       { return mkTk(TK.INT_TYPE); }  // Tipo Int
+    "Char"      { return mkTk(TK.CHAR_TYPE); } // Tipo Char
+    "Bool"      { return mkTk(TK.BOOL_TYPE); } // Tipo Bool
+    "Float"     { return mkTk(TK.FLOAT_TYPE); } // Tipo Float
     "true"      { return mkTk(TK.TRUE, true); }
     "false"     { return mkTk(TK.FALSE, false); }
+
 
     // Palavras-chave
     "data"      { return mkTk(TK.DATA); }
