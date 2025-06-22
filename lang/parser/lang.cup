@@ -1,0 +1,56 @@
+///////////////////////////////////////////////////////////////////////
+/// Álvaro Braz Cunha - 21.1.8163                                   ///
+/// Diego Sanches Nere dos Santos - 21.1.8003                       ///
+///////////////////////////////////////////////////////////////////////
+package lang.parser;
+
+import java_cup.runtime.*;
+
+parser code {:
+    public void report_error(String message, Object info) {
+        System.err.println("Erro sintático: " + message);
+    }
+:}
+
+// TERMINAIS
+terminal INT_TYPE, CHAR_TYPE, BOOL_TYPE, FLOAT_TYPE;
+terminal TRUE, FALSE, NULL;
+terminal DATA, ABSTRACT, IF, ELSE, RETURN, READ, PRINT, ITERATE, NEW;
+
+terminal EQUAL_EQUAL, NOT_EQUAL, AND, DOUBLE_COLON, COLON, SEMICOLON, COMMA, DOT;
+terminal ASSIGN, PLUS, MINUS, MULT, DIV, MOD, LESS_THAN, GREATER_THAN, NOT;
+
+terminal OPEN_PAREN, CLOSE_PAREN, OPEN_BRACKET, CLOSE_BRACKET, OPEN_BRACE, CLOSE_BRACE;
+
+terminal Integer INT;
+terminal Float FLOAT;
+terminal String CHAR;
+terminal String ID, TYID;
+
+// NÃO-TERMINAIS
+non terminal prog, def, data, decls, decl, type;
+
+// PONTO DE ENTRADA
+start with prog;
+
+// PRODUÇÕES
+
+prog ::= def
+       | prog def
+       ;
+
+def ::= data
+      ;
+
+data ::= DATA TYID OPEN_BRACE decls CLOSE_BRACE
+       ;
+
+decls ::= decl
+        | decls decl
+        ;
+
+decl ::= ID DOUBLE_COLON type SEMICOLON
+       ;
+
+type ::= INT_TYPE
+       ;

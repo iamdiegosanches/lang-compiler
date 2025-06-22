@@ -1,70 +1,8 @@
-main() {
-  x = 10;
-  return 0;
+data MyDataType {
+    myIntField :: Int;
+    anotherIntField :: Int;
 }
 
-true
-false
-Racional
-Point
-var_1
-10
-3.141526535
-1.0
-.12345
-'a'
-'\n'
-'\t'
-'\\'
-'\065'
-null
-()
-[]
->
-;
-:
-::
-.
-,
-=
-<
-==
-
-!=
-+
--
-*
-/
-%
-&&
-!
-
-
-new
-iterate
-read
-print
-if
-else
-boolean
-
--- testes de float (e comentário)
-{-
-multiplas
-linhas
--}
-
-Bool
-INT
-Int
-CHAR
-
-print
-iterate
-if
-else
-read
-iterate
-new
-
-'\065'
+data SecondDataType {
+    justOneInt :: Int;
+}
