@@ -13,5 +13,11 @@ make
 **Execução do Analisador:**
 
 ```
-java LangCompiler -lex [nome do arquivo]
+span
+```
+
+Execução do Analisador Sintático:
+
+```
+java -cp .:tools/java-cup-11b-runtime.jar  LangCompiler -syn ./testes/teste.txt
 ```
