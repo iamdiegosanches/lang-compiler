@@ -5,19 +5,21 @@
 
 all: LangCompiler.class
 
-LangCompiler.class: lang/parser/LangLexer.java lang/parser/LangParser.java
-	javac -cp .:tools/java-cup-11b-runtime.jar LangCompiler.java
+LangCompiler.class: lang/parser/LangParser.java
+	javac -cp ".:tools/antlr-4.13.2-complete.jar" lang/parser/*.java *.java
 
 lang/parser/LangParser.java:
-	java -jar tools/java-cup-11b.jar -destdir lang/parser/ lang/parser/lang.cup
-
-lang/parser/LangLexer.java:
-	java -jar  tools/jflex.jar -nobak -d lang/parser lang/parser/lang.flex
+	java -jar ./tools/antlr-4.13.2-complete.jar lang/parser/Lang.g4 -package lang.parser -no-listener -visitor
 
 cleanClasses:
 	find -name "*.class" -delete
 
 clean: cleanClasses
-	rm lang/parser/LangLex.java
-	rm lang/parser/parser.java
-	rm lang/parser/sym.java
+	rm lang/parser/Lang.interp
+	rm lang/parser/Lang.tokens
+	rm lang/parser/LangLexer.interp
+	rm lang/parser/LangLexer.tokens
+	rm lang/parser/LangLexer.java
+	rm lang/parser/LangParser.java
+	rm lang/parser/LangVisitor.java
+	rm lang/parser/LangBaseVisitor.java

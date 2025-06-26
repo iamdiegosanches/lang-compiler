@@ -1,0 +1,11 @@
+-- Funcao auxiliar.
+five() :: Int {
+    return 5;
+}
+
+-- Testa a chamada de funcao.
+fcallTest() {
+    result :: Int;
+    result = five() * 10;
+    print result;
+}
