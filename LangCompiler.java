@@ -6,8 +6,7 @@
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import lang.BuildAstVisitor;
-import lang.ast.NoAST;
+import lang.LangInterpreterVisitor;
 import lang.parser.LangLexer;
 import lang.parser.LangParser;
 
@@ -16,43 +15,28 @@ import java.io.IOException;
 public class LangCompiler {
 
     public static void main(String[] args) {
-        if (args.length < 2) {
-            System.out.println("Uso: java LangCompiler <opção> <arquivo>");
-            System.out.println("Opções:");
-            System.out.println("  -lex: Realiza apenas a análise léxica e imprime os tokens.");
-            System.out.println("  -syn: Realiza a análise sintática.");
-            // System.out.println("  -ast: Cria a Árvore Sintática Abstrata (AST)."); // Opção nova/renomeada
-            System.out.println("  -i: Executa a interpretação.");
+        String option;
+        String filePath;
+
+        if (args.length == 0) {
+            printHelp();
             return;
         }
 
-        String option = args[0];
-        String filePath = args[1];
+        if (args.length == 1) {
+            option = "-i";
+            filePath = args[0];
+        } else {
+            option = args[0];
+            filePath = args[1];
+        }
 
         try {
-            // Cria o fluxo de caracteres a partir do arquivo
             CharStream input = CharStreams.fromFileName(filePath);
-            
-            // Cria o analisador léxico (Lexer)
             LangLexer lexer = new LangLexer(input);
 
-            // Opção para análise léxica
             if (option.equals("-lex")) {
-                // System.out.println("Realizando análise léxica para: " + filePath);
-                org.antlr.v4.runtime.Token token;
-                while ((token = lexer.nextToken()).getType() != org.antlr.v4.runtime.Token.EOF) {
-                    // Usando o vocabulário do lexer para obter nomes simbólicos dos tokens
-                    String tokenName = LangLexer.VOCABULARY.getSymbolicName(token.getType());
-                    System.out.printf(
-                        "(%d,%d) %s (%s)\n",
-                        token.getLine(),
-                        token.getCharPositionInLine(),
-                        tokenName,
-                        token.getText()
-                    );
-                }
-                lexer.reset();
-                System.out.println("Análise léxica concluída.");
+                processLexer(lexer);
                 return;
             }
 
@@ -69,33 +53,48 @@ public class LangCompiler {
                 System.out.println("rejected");
                 System.err.println("A análise sintática falhou com " + errorListener.getErrorCount() + " erro(s).");
             } else {
-                if (option.equals("-syn")) {
-                    System.out.println("accepted");
-                    System.out.println("Análise sintática concluída com sucesso.");
-                }
-                
-                if (option.equals("-ast")) {
-                    System.out.println("Análise sintática concluída. Construindo e exibindo a AST...");
-    
-                    BuildAstVisitor astVisitor = new BuildAstVisitor();
-                    NoAST astRoot = astVisitor.visit(tree);
-                    
-                    // A mágica acontece aqui!
-                    if(astRoot != null) {
-                        astRoot.print(""); // Imprime a AST a partir da raiz
-                    } else {
-                        System.err.println("Erro: A raiz da AST é nula.");
-                    }
-                }
-
-                if (option.equals("-i")) {
-                    System.out.println("Interpretação ainda não implementada.");
-                    // AQUI VOCÊ TERIA A LÓGICA DE INTERPRETAÇÃO, POSSIVELMENTE USANDO UM VISITOR DIFERENTE SOBRE A AST
+                switch (option) {
+                    case "-syn":
+                        System.out.println("accepted");
+                        break;
+                    case "-i":
+                        try {
+                            LangInterpreterVisitor interpreter = new LangInterpreterVisitor();
+                            interpreter.visit(tree);
+                        } catch (Exception e) {
+                            System.err.println("Erro de execução: " + e.getMessage());
+                        }
+                        break;
+                    default:
+                        System.err.println("Opção '" + option + "' inválida.");
+                        printHelp();
+                        break;
                 }
             }
-
         } catch (IOException e) {
             System.err.println("Erro ao ler o arquivo: " + e.getMessage());
+        }
+    }
+
+    private static void printHelp() {
+        System.out.println("Uso: java LangCompiler [<opção>] <arquivo>");
+        System.out.println("Opções:");
+        System.out.println("  -lex: Realiza a análise léxica e imprime os tokens encontrados. [cite: 435]");
+        System.out.println("  -syn: Realiza a análise sintática e verifica se o programa é válido. [cite: 421]");
+        System.out.println("  -i  : Executa o interpretador para o programa (ação padrão). [cite: 422]");
+    }
+
+    private static void processLexer(LangLexer lexer) {
+        org.antlr.v4.runtime.Token token;
+        while ((token = lexer.nextToken()).getType() != org.antlr.v4.runtime.Token.EOF) {
+            String tokenName = LangLexer.VOCABULARY.getSymbolicName(token.getType());
+            System.out.printf(
+                "(%d,%d) %s (%s)\n",
+                token.getLine(),
+                token.getCharPositionInLine() + 1,
+                tokenName,
+                token.getText()
+            );
         }
     }
 }
@@ -108,13 +107,15 @@ class SyntaxErrorListener extends BaseErrorListener {
     public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
         hasErrors = true;
         errorCount++;
-        System.err.printf("Erro sintático na linha %d:%d - %s\n", line, charPositionInLine, msg);
+        // Silencia a mensagem de erro padrão do ANTLR para focar na saída "rejected".
+        // Você pode descomentar a linha abaixo para depuração.
+        // System.err.printf("Erro sintático na linha %d:%d - %s\n", line, charPositionInLine + 1, msg);
     }
 
     public boolean hasErrors() {
         return hasErrors;
     }
-    
+
     public int getErrorCount() {
         return errorCount;
     }

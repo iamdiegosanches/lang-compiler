@@ -9,11 +9,12 @@ package lang.parser;
 prog: def+ EOF;
 
 def: data | func;
-data: DATA TYID OPEN_BRACE decls CLOSE_BRACE;
-func: ID OPEN_PAREN params? CLOSE_PAREN (DOUBLE_COLON type)? block;
+data: ABSTRACT? DATA TYID OPEN_BRACE decls? CLOSE_BRACE;
+func: ID OPEN_PAREN params? CLOSE_PAREN (DOUBLE_COLON returnTypes)? block;
 
 params: param (COMMA param)*;
 param: ID DOUBLE_COLON type;
+returnTypes: type (COMMA type)*;
 
 decls: decl+;
 decl: ID DOUBLE_COLON type SEMICOLON;
@@ -25,10 +26,10 @@ block: OPEN_BRACE stm* CLOSE_BRACE;
 
 stm: decl
    | lvalue ASSIGN expr SEMICOLON
-   | fcall SEMICOLON
+   | cmdFcall SEMICOLON
    | print SEMICOLON
    | read SEMICOLON
-   | ret SEMICOLON
+   | ret
    | ifStm
    | iterateStm
    | block
@@ -36,9 +37,11 @@ stm: decl
 
 print: PRINT expr;
 read: READ lvalue;
-ret: RETURN expr?;
-ifStm: IF expr block (ELSE block)?;
-iterateStm: ITERATE expr block;
+ret: RETURN exprList SEMICOLON;
+ifStm: IF OPEN_PAREN expr CLOSE_PAREN block (ELSE block)?;
+iterateStm: ITERATE OPEN_PAREN (ID COLON)? expr CLOSE_PAREN block;
+
+exprList: expr (COMMA expr)*;
 
 expr: bterm (op=AND bterm)*;
 bterm: cterm ( (op=EQUAL_EQUAL | op=NOT_EQUAL) cterm)*;
@@ -47,21 +50,22 @@ aterm: mterm ( (op=PLUS | op=MINUS) mterm)*;
 mterm: uterm ( (op=MULT | op=DIV | op=MOD) uterm)*;
 uterm: op=(NOT | MINUS)? pterm;
 
-// --- MUDANÇA ESTÁ AQUI ---
 pterm: lvalue
-     | fcall
+     | exprFcall (OPEN_BRACKET expr CLOSE_BRACKET)? // Chamada de função em expressão com acesso ao retorno
      | literal
-     | NEW type // ANTES: NEW btype. AGORA PERMITE CRIAR ARRAYS.
+     | NEW type (OPEN_BRACKET expr CLOSE_BRACKET)? // 'new Racional' ou 'new Int[10]'
      | OPEN_PAREN expr CLOSE_PAREN
      ;
 
 lvalue: ID (DOT ID | OPEN_BRACKET expr CLOSE_BRACKET)*;
-fcall: ID OPEN_PAREN (expr (COMMA expr)*)? CLOSE_PAREN;
+lvalueList: lvalue (COMMA lvalue)*;
+
+cmdFcall: ID OPEN_PAREN exprList? CLOSE_PAREN (LESS_THAN lvalueList GREATER_THAN)?;
+exprFcall: ID OPEN_PAREN exprList? CLOSE_PAREN;
+
 literal: INT | FLOAT | CHAR | TRUE | FALSE | NULL;
 
-
 // --- REGRAS DO LEXER (TOKENS) ---
-// (Esta parte permanece a mesma)
 
 INT_TYPE      : 'Int';
 CHAR_TYPE     : 'Char';
