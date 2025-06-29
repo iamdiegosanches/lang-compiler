@@ -1,0 +1,10 @@
+-- Testa o laco iterate para um pseudo-fatorial.
+factorial(n :: Int) :: Int {
+    res :: Int;
+    res = 1;
+    iterate n > 1 {
+        res = res * n;
+        n = n - 1;
+    }
+    return res;
+}

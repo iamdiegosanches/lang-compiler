@@ -1,0 +1,6 @@
+-- Testa uma funcao completa.
+sum(a :: Int, b :: Int) :: Int {
+    c :: Int;
+    c = a + b;
+    return c;
+}

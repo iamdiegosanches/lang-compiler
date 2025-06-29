@@ -1,0 +1,11 @@
+data Vector {
+    x :: Float;
+    y :: Float;
+}
+
+accessTest() {
+    v :: Vector;
+    v = new Vector;
+    v.x = 1.0;
+    v.y = -v.x;
+}

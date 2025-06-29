@@ -1,0 +1,5 @@
+-- Testa a definicao de uma estrutura simples com dois campos.
+data Point {
+    x :: Int;
+    y :: Int;
+}

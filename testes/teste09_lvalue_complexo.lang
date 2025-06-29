@@ -1,0 +1,10 @@
+data Container {
+    items :: Int[];
+}
+
+complexLValue() {
+    c :: Container;
+    c = new Container;
+    c.items = new Int[];
+    c.items[0] = 123;
+}
