@@ -58,12 +58,6 @@ public class LangCompiler {
                         System.out.println("accepted");
                         break;
                     case "-i":
-                        try {
-                            LangInterpreterVisitor interpreter = new LangInterpreterVisitor();
-                            interpreter.visit(tree);
-                        } catch (Exception e) {
-                            System.err.println("Erro de execução: " + e.getMessage());
-                        }
                         break;
                     default:
                         System.err.println("Opção '" + option + "' inválida.");
@@ -107,15 +101,14 @@ class SyntaxErrorListener extends BaseErrorListener {
     public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
         hasErrors = true;
         errorCount++;
-        // Silencia a mensagem de erro padrão do ANTLR para focar na saída "rejected".
-        // Você pode descomentar a linha abaixo para depuração.
-        // System.err.printf("Erro sintático na linha %d:%d - %s\n", line, charPositionInLine + 1, msg);
+        
+        System.err.printf("Erro sintático na linha %d:%d - %s\n", line, charPositionInLine + 1, msg);
     }
 
     public boolean hasErrors() {
         return hasErrors;
     }
-
+    
     public int getErrorCount() {
         return errorCount;
     }

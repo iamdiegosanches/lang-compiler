@@ -1,3 +1,59 @@
+-- Este é um programa de exemplo completo para a linguagem lang.
+
+fatorial(n :: Int) : Int {
+    if (n < 2) {
+        return 1;
+    } else {
+        return n * fatorial(n - 1)[0];
+    }
+}
+
+divmod(a :: Int, b :: Int) : Int, Int {
+    q :: Int;
+    r :: Int;
+    q = a / b;
+    r = a % b;
+    return q, r;
+}
+
 main() {
-    print 42;
+    num :: Int;
+    res :: Int;
+    q :: Int;
+    r :: Int;
+    arr :: Int[];
+    i :: Int;
+
+    -- Vamos usar um valor fixo para o teste ser direto.
+    num = 5;
+    
+    res = fatorial(num)[0];
+    
+    -- Imprime o resultado numérico do fatorial
+    print res;
+    
+    -- Chama divmod e captura os dois valores de retorno em 'q' e 'r'
+    divmod(17, 5) <q, r>;
+    
+    -- Imprime o quociente e o resto
+    print q;
+    print r;
+
+    -- Demonstração de Arrays
+    arr = new Int[5];
+    i = 0;
+    iterate (5) {
+        arr[i] = i * 2;
+        i = i + 1;
+    }
+    
+    -- Imprime um valor do array
+    print arr[3];
+
+    j :: Int;
+    j = 0;
+    iterate (5) {
+        print arr[j];
+        j = j + 1;
+    }
 }
