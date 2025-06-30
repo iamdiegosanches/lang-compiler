@@ -8,85 +8,96 @@ package lang.parser;
 
 // --- REGRAS DO PARSER (SINTAXE) ---
 
-prog: def+ EOF;
+prog: def* EOF;
 
-def: data | func;
+def: data   # DataDef
+  | fun     # FunDef
+  ;
 
 data
-  : ABSTRACT DATA TYID OPEN_BRACE (decl | func)* CLOSE_BRACE
+  : ABSTRACT DATA TYID OPEN_BRACE (decl | fun)* CLOSE_BRACE
   | DATA TYID OPEN_BRACE decl* CLOSE_BRACE
   ;
 
-func
-  // O corpo da função é sempre um bloco, conforme exemplos e estrutura da linguagem.
-  : ID OPEN_PAREN params? CLOSE_PAREN (COLON type (COMMA type)*)? block
-  ;
-
-params: param (COMMA param)*;
-param: ID DOUBLE_COLON type;
-
 decl: ID DOUBLE_COLON type SEMICOLON;
 
-type: btype (OPEN_BRACKET CLOSE_BRACKET)*;
+fun
+  : ID OPEN_PAREN params? CLOSE_PAREN (COLON type (COMMA type)*)? cmd
+  ;
+
+params : ID DOUBLE_COLON type (COMMA ID DOUBLE_COLON type)*;
+
+// type : type OPEN_BRACKET CLOSE_BRACKET | btype
+type : btype (OPEN_BRACKET CLOSE_BRACKET)*;
 
 btype: INT_TYPE | CHAR_TYPE | BOOL_TYPE | FLOAT_TYPE | TYID;
 
-block: OPEN_BRACE stm* CLOSE_BRACE;
+block: OPEN_BRACE cmd* CLOSE_BRACE;
 
-// Regra de comando (statement) reordenada para resolver ambiguidades.
-stm
-  : block
-  | ifStm
-  | iterateStm
-  | ret
-  | print SEMICOLON
-  | read SEMICOLON
-  | decl
-  | lvalue ASSIGN expr SEMICOLON
-  | cmdFcall SEMICOLON
+cmd
+  : block                                                                                           # BlockCmd
+  | IF OPEN_PAREN exp CLOSE_PAREN cmd (ELSE cmd)?                                                   # IfCmd
+  //| IF OPEN_PAREN exp CLOSE_PAREN cmd
+  //| IF OPEN_PAREN exp CLOSE_PAREN cmd ELSE cmd
+  | ITERATE OPEN_PAREN itcond CLOSE_PAREN cmd                                                       # IterateCmd
+  | READ lvalue SEMICOLON                                                                           # ReadCmd
+  | PRINT exp SEMICOLON                                                                             # PrintCmd
+  | RETURN exp (COMMA exp)* SEMICOLON                                                               # ReturnCmd
+  | lvalue ASSIGN exp SEMICOLON                                                                     # AssignmentCmd
+  | ID OPEN_PAREN exps? CLOSE_PAREN (LESS_THAN lvalue (COMMA lvalue)* GREATER_THAN)? SEMICOLON      # ProcCallCmd
   ;
 
-print: PRINT expr; // Corrigido: Adicionado SEMICOLON implícito via regra stm.
+itcond : ID COLON exp | exp;
 
-read: READ lvalue;  // Corrigido: Adicionado SEMICOLON implícito via regra stm.
+exp
+  : logicalAndExp
+  ;
 
-ret: RETURN exprList? SEMICOLON; // Permite 'return;' sem valor. exprList agora opcional.
+logicalAndExp
+  : relationalExp (AND relationalExp)*
+  ;
 
-ifStm: IF OPEN_PAREN expr CLOSE_PAREN stm (ELSE stm)?;
+relationalExp
+  : additiveExp ((LESS_THAN | EQUAL_EQUAL | NOT_EQUAL) additiveExp)*
+  ;
 
-iterateStm: ITERATE OPEN_PAREN (ID COLON)? expr CLOSE_PAREN stm;
+additiveExp
+  : multiplicativeExp                                             # ToMultExp
+  | left=additiveExp operator=('+'|'-') right=multiplicativeExp   # AddSubExp
+  ;
 
-exprList: expr (COMMA expr)*;
+multiplicativeExp
+  : unaryExp ((MULT | DIV | MOD) unaryExp)*
+  ;
 
-// Hierarquia de expressões corrigida para refletir precedência e associatividade
-expr: bterm (op=AND bterm)*; // Nível 1: && (Associatividade à Esquerda)
+unaryExp
+  : NOT unaryExp
+  | MINUS unaryExp
+  | primaryExp
+  ;
 
-bterm: cterm ( (op=EQUAL_EQUAL | op=NOT_EQUAL) cterm)*; // Nível 2: ==, != (Associatividade à Esquerda)
+primaryExp
+  : lvalue                                                              # LvalueExp
+  | ID OPEN_PAREN exps? CLOSE_PAREN OPEN_BRACKET exp CLOSE_BRACKET      # FunCallExp
+  | NEW type (OPEN_BRACKET exp CLOSE_BRACKET)?                          # NewExp
+  | OPEN_PAREN exp CLOSE_PAREN                                          # ParenExp
+  | TRUE                                                                # TrueExp
+  | FALSE                                                               # FalseExp
+  | NULL                                                                # NullExp
+  | INT                                                                 # IntExp
+  | FLOAT                                                               # FloatExp
+  | CHAR                                                                # CharExp
+  ;
 
-cterm: aterm ( (op=LESS_THAN | op=GREATER_THAN) aterm)?; // Nível 3: <, > (Não Associativo)
+op : AND | LESS_THAN | EQUAL_EQUAL | NOT_EQUAL | PLUS | MINUS | MULT | DIV | MOD ;
 
-aterm: mterm ( (op=PLUS | op=MINUS) mterm)*; // Nível 4: +, - (Associatividade à Esquerda)
+// lvalue : ID | lvalue OPEN_BRACKET exp CLOSE_BRACKET | lvalue DOT ID ; 
+lvalue
+  : ID (OPEN_BRACKET exp CLOSE_BRACKET | DOT ID)*
+  ;
 
-mterm: uterm ( (op=MULT | op=DIV | op=MOD) uterm)*; // Nível 5: *, /, % (Associatividade à Esquerda)
-
-uterm: op=(NOT | MINUS) uterm | pterm; // Nível 6: !, - (Associatividade à Direita)
-
-pterm: lvalue
-     | exprFcall (OPEN_BRACKET expr CLOSE_BRACKET)? // Chamada de função em expressão
-     | literal
-     | NEW (TYID | type) (OPEN_BRACKET expr CLOSE_BRACKET)? // new Racional, new Int, new Int[5]
-     | OPEN_PAREN expr CLOSE_PAREN
-     ;
-
-lvalue: ID (DOT ID | OPEN_BRACKET expr CLOSE_BRACKET)*;
-
-lvalueList: lvalue (COMMA lvalue)*;
-
-cmdFcall: ID OPEN_PAREN exprList? CLOSE_PAREN (LESS_THAN lvalueList GREATER_THAN)?;
-
-exprFcall: ID OPEN_PAREN exprList? CLOSE_PAREN;
-
-literal: INT | FLOAT | CHAR | TRUE | FALSE | NULL;
+exps : exp (COMMA exp)*
+  ;
 
 
 // --- REGRAS DO LEXER (TOKENS) ---

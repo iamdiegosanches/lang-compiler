@@ -1,0 +1,4 @@
+main() {
+    print 75;
+    print 1 + 1;
+}
