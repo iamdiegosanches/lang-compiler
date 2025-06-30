@@ -58,6 +58,8 @@ public class LangCompiler {
                         System.out.println("accepted");
                         break;
                     case "-i":
+                        LangInterpreterVisitor interpreter = new LangInterpreterVisitor();
+                        interpreter.visit(tree);
                         break;
                     default:
                         System.err.println("Opção '" + option + "' inválida.");

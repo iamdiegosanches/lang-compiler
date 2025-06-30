@@ -33,16 +33,16 @@ btype: INT_TYPE | CHAR_TYPE | BOOL_TYPE | FLOAT_TYPE | TYID;
 block: OPEN_BRACE cmd* CLOSE_BRACE;
 
 cmd
-  : block
-  // IF OPEN_PAREN exp CLOSE_PAREN cmd (ELSE cmd)?
-  | IF OPEN_PAREN exp CLOSE_PAREN cmd
-  | IF OPEN_PAREN exp CLOSE_PAREN cmd ELSE cmd
-  | ITERATE OPEN_PAREN itcond CLOSE_PAREN cmd
-  | READ lvalue SEMICOLON 
-  | PRINT exp SEMICOLON
-  | RETURN exp (COMMA exp)* SEMICOLON
-  | lvalue ASSIGN exp SEMICOLON
-  | ID OPEN_PAREN exps? CLOSE_PAREN (LESS_THAN lvalue (COMMA lvalue)* GREATER_THAN)? SEMICOLON 
+  : block                                                                                           # BlockCmd
+  | IF OPEN_PAREN exp CLOSE_PAREN cmd (ELSE cmd)?                                                   # IfCmd
+  //| IF OPEN_PAREN exp CLOSE_PAREN cmd
+  //| IF OPEN_PAREN exp CLOSE_PAREN cmd ELSE cmd
+  | ITERATE OPEN_PAREN itcond CLOSE_PAREN cmd                                                       # IterateCmd
+  | READ lvalue SEMICOLON                                                                           # ReadCmd
+  | PRINT exp SEMICOLON                                                                             # PrintCmd
+  | RETURN exp (COMMA exp)* SEMICOLON                                                               # ReturnCmd
+  | lvalue ASSIGN exp SEMICOLON                                                                     # AssignmentCmd
+  | ID OPEN_PAREN exps? CLOSE_PAREN (LESS_THAN lvalue (COMMA lvalue)* GREATER_THAN)? SEMICOLON      # ProcCallCmd
   ;
 
 itcond : ID COLON exp | exp;
@@ -60,7 +60,8 @@ relationalExp
   ;
 
 additiveExp
-  : multiplicativeExp ((PLUS | MINUS) multiplicativeExp)*
+  : multiplicativeExp                                             # ToMultExp
+  | left=additiveExp operator=('+'|'-') right=multiplicativeExp   # AddSubExp
   ;
 
 multiplicativeExp
@@ -74,16 +75,16 @@ unaryExp
   ;
 
 primaryExp
-  : lvalue
-  | ID OPEN_PAREN exps? CLOSE_PAREN OPEN_BRACKET exp CLOSE_BRACKET // Erro 2 corrigido (exps?)
-  | NEW type (OPEN_BRACKET exp CLOSE_BRACKET)? // Erro 1 corrigido (parte opcional)
-  | OPEN_PAREN exp CLOSE_PAREN
-  | TRUE
-  | FALSE
-  | NULL
-  | INT
-  | FLOAT
-  | CHAR
+  : lvalue                                                              # LvalueExp
+  | ID OPEN_PAREN exps? CLOSE_PAREN OPEN_BRACKET exp CLOSE_BRACKET      # FunCallExp
+  | NEW type (OPEN_BRACKET exp CLOSE_BRACKET)?                          # NewExp
+  | OPEN_PAREN exp CLOSE_PAREN                                          # ParenExp
+  | TRUE                                                                # TrueExp
+  | FALSE                                                               # FalseExp
+  | NULL                                                                # NullExp
+  | INT                                                                 # IntExp
+  | FLOAT                                                               # FloatExp
+  | CHAR                                                                # CharExp
   ;
 
 op : AND | LESS_THAN | EQUAL_EQUAL | NOT_EQUAL | PLUS | MINUS | MULT | DIV | MOD ;
