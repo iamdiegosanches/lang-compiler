@@ -10,7 +10,9 @@ package lang.parser;
 
 prog: def* EOF;
 
-def: data | fun;
+def: data   # DataDef
+  | fun     # FunDef
+  ;
 
 data
   : ABSTRACT DATA TYID OPEN_BRACE (decl | fun)* CLOSE_BRACE
