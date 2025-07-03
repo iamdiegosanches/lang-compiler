@@ -1,117 +1,111 @@
-///////////////////////////////////////////////////////////////////////
-/// Álvaro Braz Cunha - 21.1.8163                                   ///
-/// Diego Sanches Nere dos Santos - 21.1.8003                       ///
-///////////////////////////////////////////////////////////////////////
 
-import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.tree.ParseTree;
-
-import lang.LangInterpreterVisitor;
-import lang.parser.LangLexer;
+import java.io.*;
+import java_cup.runtime.*;
+import lang.nodes.dotutils.DotFile;
+import lang.nodes.CNode;
+import lang.nodes.environment.Env;
 import lang.parser.LangParser;
+import lang.parser.LangLexer;
+import lang.parser.LangParserSym;
+import lang.nodes.visitors.SimpleVisitor;
+import lang.nodes.visitors.GVizVisitor;
+import lang.nodes.visitors.InterpVisitor;
+import lang.nodes.visitors.tychkvisitor.TyChecker;
 
-import java.io.IOException;
+public class LangCompiler{
 
-public class LangCompiler {
+     public static void runLexer(LangLexer lex)  throws IOException,Exception{
+           Symbol tk = lex.nextToken();
+           while(tk.sym != LangParserSym.EOF){
+               System.out.println("(" + tk.left + ","  + tk.right + ")" + tk.sym);
+               tk = lex.nextToken();
+           }
+           System.out.println(tk.toString());
+     }
 
-    public static void main(String[] args) {
-        String option;
-        String filePath;
-
-        if (args.length == 0) {
-            printHelp();
-            return;
+    public static void runDot(LangParser p,String fname)  throws IOException,Exception{
+        Symbol presult = p.parse();
+        CNode root = (CNode)presult.value;
+        if(root != null){
+              GVizVisitor gv = new GVizVisitor();
+              root.accept(gv);
+              String dotfname = fname.replaceFirst("\\.[^\\.]+$",".dot");
+              System.out.println("Escrevendo saida para: " + dotfname);
+              gv.saveDot(dotfname);
+        }else{
+              System.out.println("root was null !");
         }
-
-        if (args.length == 1) {
-            option = "-i";
-            filePath = args[0];
-        } else {
-            option = args[0];
-            filePath = args[1];
-        }
-
-        try {
-            CharStream input = CharStreams.fromFileName(filePath);
-            LangLexer lexer = new LangLexer(input);
-
-            if (option.equals("-lex")) {
-                processLexer(lexer);
-                return;
-            }
-
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            LangParser parser = new LangParser(tokens);
-
-            SyntaxErrorListener errorListener = new SyntaxErrorListener();
-            parser.removeErrorListeners();
-            parser.addErrorListener(errorListener);
-
-            ParseTree tree = parser.prog();
-
-            if (errorListener.hasErrors()) {
-                System.out.println("rejected");
-                System.err.println("A análise sintática falhou com " + errorListener.getErrorCount() + " erro(s).");
-            } else {
-                switch (option) {
-                    case "-syn":
-                        System.out.println("accepted");
-                        break;
-                    case "-i":
-                        LangInterpreterVisitor interpreter = new LangInterpreterVisitor();
-                        interpreter.visit(tree);
-                        break;
-                    default:
-                        System.err.println("Opção '" + option + "' inválida.");
-                        printHelp();
-                        break;
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("Erro ao ler o arquivo: " + e.getMessage());
+    }
+    public static void interpretAndType(LangParser p)  throws IOException,Exception{
+        Symbol presult = p.parse();
+        CNode root = (CNode)presult.value;
+        if(root != null){
+              TyChecker tv = new TyChecker();
+              root.accept(tv);
+              InterpVisitor v = new InterpVisitor();
+              root.accept(v);
+        }else{
+              System.out.println("root was null !");
         }
     }
 
-    private static void printHelp() {
-        System.out.println("Uso: java LangCompiler [<opção>] <arquivo>");
-        System.out.println("Opções:");
-        System.out.println("  -lex: Realiza a análise léxica e imprime os tokens encontrados. [cite: 435]");
-        System.out.println("  -syn: Realiza a análise sintática e verifica se o programa é válido. [cite: 421]");
-        System.out.println("  -i  : Executa o interpretador para o programa (ação padrão). [cite: 422]");
-    }
 
-    private static void processLexer(LangLexer lexer) {
-        org.antlr.v4.runtime.Token token;
-        while ((token = lexer.nextToken()).getType() != org.antlr.v4.runtime.Token.EOF) {
-            String tokenName = LangLexer.VOCABULARY.getSymbolicName(token.getType());
-            System.out.printf(
-                "(%d,%d) %s (%s)\n",
-                token.getLine(),
-                token.getCharPositionInLine() + 1,
-                tokenName,
-                token.getText()
-            );
+    public static void interpret(LangParser p)  throws IOException,Exception{
+        Symbol presult = p.parse();
+        CNode root = (CNode)presult.value;
+        if(root != null){
+              InterpVisitor v = new InterpVisitor();
+              root.accept(v);
+        }else{
+              System.out.println("root was null !");
         }
     }
-}
 
-class SyntaxErrorListener extends BaseErrorListener {
-    private boolean hasErrors = false;
-    private int errorCount = 0;
+    public static void interpretDebug(LangParser p)  throws IOException,Exception{
+        Symbol presult = p.parse();
+        CNode root = (CNode)presult.value;
+        if(root != null){
+              InterpVisitor v = new InterpVisitor();
+              root.accept(v);
 
-    @Override
-    public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
-        hasErrors = true;
-        errorCount++;
-        
-        System.err.printf("Erro sintático na linha %d:%d - %s\n", line, charPositionInLine + 1, msg);
+        }else{
+              System.out.println("root was null !");
+        }
     }
 
-    public boolean hasErrors() {
-        return hasErrors;
-    }
-    
-    public int getErrorCount() {
-        return errorCount;
-    }
+     public static void main(String args[])  throws IOException,Exception {
+          int fname = 0;
+          if(args.length < 1 || args.length > 2){
+             System.out.println("use java LangCompiler [opcao] <nome-de-arquivo>");
+             System.out.println("opcao: ");
+             System.out.println("   -lex  : lista os toke ");
+             System.out.println("   -dot  : gera um arquivo dot contendo uma representação da AST.");
+             System.out.println("   -i    : Interpreta o programa.");
+             System.out.println("   -ti    : Verifica Tipos e interpreta.");
+             System.out.println("   -id   : Interpreta o programa e imprime a tabela de ambiente de execução.");
+             //System.out.println("         :");
+             System.exit(0);
+          }else{
+              if(args.length == 2){ fname = 1;}
+              LangLexer lex = new LangLexer(new FileReader(args[fname]));
+              LangParser p = new LangParser(lex);
+              if(args.length == 2 && args[0].equals("-lex")){
+                    runLexer(lex);
+                    System.exit(0);
+              }else if(args.length == 2 && args[0].equals("-dot")){
+                    runDot(p,args[fname]);
+                    System.exit(0);
+              }else if(args.length == 2 && args[0].equals("-ty")){
+                    interpretAndType(p);
+                    System.exit(0);
+              }
+              else if(args.length == 2 && args[0].equals("-i")){
+                    interpret(p);
+                    System.exit(0);
+              }else if(args.length == 2 && args[0].equals("-id")){
+                    interpretDebug(p);
+                    System.exit(0);
+              }
+          }
+     }
 }
