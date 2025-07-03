@@ -4,27 +4,27 @@
 ///////////////////////////////////////////////////////////////////////
 package lang.parser;
 
+import java.util.ArrayList;
 import java_cup.runtime.Symbol;
 
 %%
+
 %public
-%class LangLex
-%implements java_cup.runtime.Scanner
+%function nextToken
+%type Symbol
+%class LangLexer
+
 %line
 %column
-%function next_token
-%type java_cup.runtime.Symbol
-%cupsym sym
+
+%unicode
+
+%eofval{
+   return new Symbol(LangParserSym.EOF, yyline + 1, yycolumn + 1);
+%eofval}
 
 %{
-    private Symbol symbolFactory(int type) {
-        return new Symbol(type, yyline + 1, yycolumn + 1);
-    }
-
-    private Symbol symbolFactory(int type, Object value) {
-        return new Symbol(type, yyline + 1, yycolumn + 1, value);
-    }
-
+    private ArrayList arr;
     private int str2int(String s) {
         try {
             return Integer.parseInt(s);
@@ -44,10 +44,6 @@ import java_cup.runtime.Symbol;
     }
 %}
 
-%eofval{
-    return symbolFactory(sym.EOF);
-%eofval}
-
 ID    = [a-z][a-zA-Z0-9_]*
 TYID  = [A-Z][a-zA-Z0-9_]*
 INT   = [0-9]+
@@ -56,57 +52,57 @@ CHAR  = \'([^\\'\n\r]|\\[nrt'\\]|\\[0-9]{3})\'
 
 %%
 <YYINITIAL>{
-    "Int"       { return symbolFactory(sym.INT_TYPE); }
-    "Char"      { return symbolFactory(sym.CHAR_TYPE); }
-    "Bool"      { return symbolFactory(sym.BOOL_TYPE); }
-    "Float"     { return symbolFactory(sym.FLOAT_TYPE); }
-    "true"      { return symbolFactory(sym.TRUE, true); }
-    "false"     { return symbolFactory(sym.FALSE, false); }
+    "Int"       { return new Symbol(LangParserSym.INT_TYPE, yyline + 1, yycolumn + 1); }
+//    "Char"      { return new Symbol(LangParserSym.CHAR_TYPE, yyline + 1, yycolumn + 1); }
+    "Bool"      { return new Symbol(LangParserSym.BOOL_TYPE, yyline + 1, yycolumn + 1); }
+    "Float"     { return new Symbol(LangParserSym.FLOAT_TYPE, yyline + 1, yycolumn + 1); }
+    "true"      { return new Symbol(LangParserSym.TRUE, yyline + 1, yycolumn + 1, true); }
+    "false"     { return new Symbol(LangParserSym.FALSE, yyline + 1, yycolumn + 1, false); }
 
-    "data"      { return symbolFactory(sym.DATA); }
-    "abstract"  { return symbolFactory(sym.ABSTRACT); }
-    "if"        { return symbolFactory(sym.IF); }
-    "else"      { return symbolFactory(sym.ELSE); }
-    "return"    { return symbolFactory(sym.RETURN); }
-    "read"      { return symbolFactory(sym.READ); }
-    "print"     { return symbolFactory(sym.PRINT); }
-    "iterate"   { return symbolFactory(sym.ITERATE); }
-    "new"       { return symbolFactory(sym.NEW); }
-    "null"      { return symbolFactory(sym.NULL); }
+//    "data"      { return new Symbol(LangParserSym.DATA, yyline + 1, yycolumn + 1); }
+//    "abstract"  { return new Symbol(LangParserSym.ABSTRACT, yyline + 1, yycolumn + 1); }
+//    "if"        { return new Symbol(LangParserSym.IF, yyline + 1, yycolumn + 1); }
+//    "else"      { return new Symbol(LangParserSym.ELSE, yyline + 1, yycolumn + 1); }
+//    "return"    { return new Symbol(LangParserSym.RETURN, yyline + 1, yycolumn + 1); }
+//    "read"      { return new Symbol(LangParserSym.READ, yyline + 1, yycolumn + 1); }
+    "print"     { return new Symbol(LangParserSym.PRINT, yyline + 1, yycolumn + 1); }
+    "iterate"   { return new Symbol(LangParserSym.ITERATE, yyline + 1, yycolumn + 1); }
+//    "new"       { return new Symbol(LangParserSym.NEW, yyline + 1, yycolumn + 1); }
+//    "null"      { return new Symbol(LangParserSym.NULL, yyline + 1, yycolumn + 1); }
 
-    "=="        { return symbolFactory(sym.EQUAL_EQUAL); }
-    "!="        { return symbolFactory(sym.NOT_EQUAL); }
-    "&&"        { return symbolFactory(sym.AND); }
-    "::"        { return symbolFactory(sym.DOUBLE_COLON); }
-    ":"         { return symbolFactory(sym.COLON); }
-    ";"         { return symbolFactory(sym.SEMICOLON); }
-    ","         { return symbolFactory(sym.COMMA); }
-    "."         { return symbolFactory(sym.DOT); }
-    "="         { return symbolFactory(sym.ASSIGN); }
-    "+"         { return symbolFactory(sym.PLUS); }
-    "-"         { return symbolFactory(sym.MINUS); }
-    "*"         { return symbolFactory(sym.MULT); }
-    "/"         { return symbolFactory(sym.DIV); }
-    "%"         { return symbolFactory(sym.MOD); }
-    "<"         { return symbolFactory(sym.LESS_THAN); }
-    ">"         { return symbolFactory(sym.GREATER_THAN); }
-    "!"         { return symbolFactory(sym.NOT); }
-    "("         { return symbolFactory(sym.OPEN_PAREN); }
-    ")"         { return symbolFactory(sym.CLOSE_PAREN); }
-    "["         { return symbolFactory(sym.OPEN_BRACKET); }
-    "]"         { return symbolFactory(sym.CLOSE_BRACKET); }
-    "{"         { return symbolFactory(sym.OPEN_BRACE); }
-    "}"         { return symbolFactory(sym.CLOSE_BRACE); }
+//    "=="        { return new Symbol(LangParserSym.EQUAL_EQUAL, yyline + 1, yycolumn + 1); }
+//    "!="        { return new Symbol(LangParserSym.NOT_EQUAL, yyline + 1, yycolumn + 1); }
+//    "&&"        { return new Symbol(LangParserSym.AND, yyline + 1, yycolumn + 1); }
+    "::"        { return new Symbol(LangParserSym.DOUBLE_COLON, yyline + 1, yycolumn + 1); }
+    ":"         { return new Symbol(LangParserSym.COLON, yyline + 1, yycolumn + 1); }
+    ";"         { return new Symbol(LangParserSym.SEMICOLON, yyline + 1, yycolumn + 1); }
+    ","         { return new Symbol(LangParserSym.COMMA, yyline + 1, yycolumn + 1); }
+//    "."         { return new Symbol(LangParserSym.DOT, yyline + 1, yycolumn + 1); }
+//    "="         { return new Symbol(LangParserSym.ASSIGN, yyline + 1, yycolumn + 1); }
+    "+"         { return new Symbol(LangParserSym.PLUS, yyline + 1, yycolumn + 1); }
+    "-"         { return new Symbol(LangParserSym.MINUS, yyline + 1, yycolumn + 1); }
+    "*"         { return new Symbol(LangParserSym.MULT, yyline + 1, yycolumn + 1); }
+    "/"         { return new Symbol(LangParserSym.DIV, yyline + 1, yycolumn + 1); }
+    "%"         { return new Symbol(LangParserSym.MOD, yyline + 1, yycolumn + 1); }
+    "<"         { return new Symbol(LangParserSym.LESS_THAN, yyline + 1, yycolumn + 1); }
+//    ">"         { return new Symbol(LangParserSym.GREATER_THAN, yyline + 1, yycolumn + 1); }
+//    "!"         { return new Symbol(LangParserSym.NOT, yyline + 1, yycolumn + 1); }
+    "("         { return new Symbol(LangParserSym.OPEN_PAREN, yyline + 1, yycolumn + 1); }
+    ")"         { return new Symbol(LangParserSym.CLOSE_PAREN, yyline + 1, yycolumn + 1); }
+//    "["         { return new Symbol(LangParserSym.OPEN_BRACKET, yyline + 1, yycolumn + 1); }
+//    "]"         { return new Symbol(LangParserSym.CLOSE_BRACKET, yyline + 1, yycolumn + 1); }
+    "{"         { return new Symbol(LangParserSym.OPEN_BRACE, yyline + 1, yycolumn + 1); }
+    "}"         { return new Symbol(LangParserSym.CLOSE_BRACE, yyline + 1, yycolumn + 1); }
 
-    {INT}       { return symbolFactory(sym.INT, str2int(yytext())); }
-    {FLOAT}     { return symbolFactory(sym.FLOAT, str2float(yytext())); }
-    {CHAR}      { return symbolFactory(sym.CHAR, yytext()); }
+    {INT}       { return new Symbol(LangParserSym.INT, yyline + 1, yycolumn + 1, str2int(yytext())); }
+    {FLOAT}     { return new Symbol(LangParserSym.FLOAT, yyline + 1, yycolumn + 1, str2float(yytext())); }
+//    {CHAR}      { return new Symbol(LangParserSym.CHAR, yyline + 1, yycolumn + 1, yytext()); }
 
-    {ID}        { return symbolFactory(sym.ID, yytext()); }
-    {TYID}      { return symbolFactory(sym.TYID, yytext()); }
+    {ID}        { return new Symbol(LangParserSym.ID, yyline + 1, yycolumn + 1, yytext()); }
+//    {TYID}      { return new Symbol(LangParserSym.TYID, yyline + 1, yycolumn + 1, yytext()); }
 
     "--".* { /* ignora */ }
-    "{-"([^*]|\\*+[^-])*"-}" { /* ignora */ }
+    "{-" [^]* "}-" { /* Ignora */ } 
     [ \t\n\r\f]+           { /* ignora */ }
 
     .                      { throw new RuntimeException("Token inesperado: \"" + yytext() + "\" na linha " + (yyline+1) + " coluna " + (yycolumn+1)); }
