@@ -260,6 +260,35 @@ public class TyChecker extends LangVisitor {
         }
     }
 
+    public void visit(Equal e) {
+        e.getLeft().accept(this);
+        e.getRight().accept(this);
+
+        VType td = stk.pop();
+        VType te = stk.pop();
+
+        if (te.getTypeValue() == td.getTypeValue()) {
+            
+            switch (te.getTypeValue()) {
+                case CLTypes.INT:
+                case CLTypes.FLOAT:
+                //case CLTypes.CHAR:
+                case CLTypes.BOOL:
+                    
+                    stk.push(VTyBool.newBool());
+                    break;
+                    
+                default:
+                    throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + 
+                                               "): Operador '==' não pode ser aplicado a operandos do tipo " + te.getTypeValue());
+            }
+
+        } else {
+            throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + 
+                                       "): Tipos incompatíveis para o operador '=='.");
+        }
+    }
+
     public void visit(Var e) {
         VType ty = lolangtx.get(e.getName());
         if (ty == null) {

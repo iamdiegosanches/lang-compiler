@@ -141,7 +141,7 @@ public  class GVizVisitor extends LangVisitor{
      }
 
      public void visit(Mod e) {
-          int root = gf.addNode("/");
+          int root = gf.addNode("%");
           e.getLeft().accept(this);
           gf.addEdge(root,subNode);
           e.getRight().accept(this);
@@ -157,6 +157,16 @@ public  class GVizVisitor extends LangVisitor{
           gf.addEdge(root,subNode);
           subNode = root;
      }
+
+     public void visit(Equal e) {
+          int root = gf.addNode("==");
+          e.getLeft().accept(this);
+          gf.addEdge(root,subNode);
+          e.getRight().accept(this);
+          gf.addEdge(root,subNode);
+          subNode = root;
+     }
+
 
      public void visit(Var e){
           subNode = gf.addNode(e.getName());

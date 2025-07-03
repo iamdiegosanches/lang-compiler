@@ -218,7 +218,7 @@ public class InterpVisitor extends LangVisitor {
             Integer right = (Integer) stk.pop();
             if (stk.peek() instanceof Integer) {
                 Integer left = (Integer) stk.pop();
-                stk.push(left < right ? true : false); // enviando 1 e 0 trocar para true e false?
+                stk.push(left < right ? true : false);
             }
         } else if (stk.peek() instanceof Float) {
             Float right = (Float) stk.pop();
@@ -229,6 +229,16 @@ public class InterpVisitor extends LangVisitor {
         } else {
             throw new RuntimeException("Operção não ptermitida entre os tipos " + e.getLine() + ", " + e.getCol() + ".");
         }
+    }
+
+    public void visit(Equal e) {
+        e.getLeft().accept(this);
+        e.getRight().accept(this);
+
+        Object right = stk.pop();
+        Object left = stk.pop();
+
+        stk.push(left.equals(right));
     }
 
     public void visit(Var e) {
