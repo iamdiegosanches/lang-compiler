@@ -30,7 +30,7 @@ scan with {: return s.nextToken(); :};
 */
 
 terminal                    PLUS, MINUS, MULT, DIV, MOD;
-terminal                    LESS_THAN;
+terminal                    LESS_THAN, EQUAL_EQUAL;
 terminal                    OPEN_PAREN, CLOSE_PAREN;
 terminal                    OPEN_BRACE, CLOSE_BRACE;
 terminal                    SEMICOLON, PRINT, ITERATE;
@@ -57,7 +57,7 @@ non terminal ArrayList<Bind> params;
 
 //precedence left OR;
 //precedence left AND;
-//precedence left EQUAL_EQUAL, NOT_EQUAL;
+precedence left EQUAL_EQUAL;
 precedence left LESS_THAN;
 
 precedence left PLUS, MINUS;
@@ -69,14 +69,13 @@ precedence left CLOSE_PAREN;
 
 /* The grammar rules */
 
-prog ::= fun:xs                           {: RESULT = xs; :}
+prog ::= cmdList:xs                           {: RESULT = xs; :}
        ;
 
-/*  public FunDef(int l, int c, String s, ArrayList<Bind> params, CType ret, CNode body){ */
+/*  Não implementado pois precisa ser reestruturado */
 fun ::= ID:id OPEN_PAREN params:ps CLOSE_PAREN COLON btype:ret block:body
        {: RESULT = new FunDef(idleft, idright, id, ps, ret, body); :}
        ;
-
 
 params ::= param:p COMMA params:ps        {: ps.add(0, p); RESULT = ps; :}
        | param:p                          {: ArrayList<Bind> list = new ArrayList<>(); list.add(p); RESULT = list; :}
@@ -113,7 +112,7 @@ expr ::= expr:e1 PLUS:t expr:e2           {: RESULT = new Plus(tleft,tright,e1,e
        | expr:e1 MINUS:t expr:e2          {: RESULT = new Sub(tleft,tright,e1,e2);         :}
        | expr:e1 DIV:t expr:e2            {: RESULT = new Div(tleft,tright,e1,e2);         :}
        | expr:e1 LESS_THAN:t expr:e2      {: RESULT = new LessThan(tleft,tright,e1,e2);    :}
-//       | expr:e1 EQUAL_EQUAL:t expr:e2    {: RESULT = new Equal(tleft,tright,e1,e2);       :}
+       | expr:e1 EQUAL_EQUAL:t expr:e2    {: RESULT = new Equal(tleft,tright,e1,e2);       :}
 //       | expr:e1 NOT_EQUAL:t expr:e2      {: RESULT = new NotEqual(tleft,tright,e1,e2);    :}
        | expr:e1 MOD:t expr:e2            {: RESULT = new Mod(tleft,tright,e1,e2);         :}
        | OPEN_PAREN expr:e CLOSE_PAREN      {: RESULT = e;                                   :}

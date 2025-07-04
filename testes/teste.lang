@@ -1,3 +1,2 @@
-foo(x :: Bool, y :: Int) : Bool {
-    iterate (2<3) print 2 < 3;
-}
+print 3 % 1;
+

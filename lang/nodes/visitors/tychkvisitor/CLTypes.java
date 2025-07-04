@@ -10,12 +10,12 @@ import lang.nodes.dotutils.DotFile;
 
 public class CLTypes {
 
-    public static short INT = 0;
-    public static short FLOAT = 1;
-    public static short BOOL = 2;
-    public static short ARR = 3;
-    public static short FUNC = 4;
-    public static short ERR = 5;
+    public static final short INT = 0;
+    public static final short FLOAT = 1;
+    public static final short BOOL = 2;
+    public static final short ARR = 3;
+    public static final short FUNC = 4;
+    public static final short ERR = 5;
 
 }
 
