@@ -254,6 +254,20 @@ public class InterpVisitor extends LangVisitor {
         }
     }
 
+    public void visit(UMinus e) {
+        e.getRight().accept(this);
+
+        Object value = stk.pop();
+
+        if (value instanceof Integer) {
+            stk.push(-(Integer) value);
+        } else if (value instanceof Float) {
+            stk.push(-(Float) value);
+        } else {
+            throw new RuntimeException(" Operação não permitida com o tipo " + e.getLine() + ", " + e.getCol() + ".");
+        }
+    }
+
     public void visit(Var e) {
         Object val = env.read(e.getName());
         if (val != null) {

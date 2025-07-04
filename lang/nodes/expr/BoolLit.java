@@ -1,8 +1,6 @@
 package lang.nodes.expr;
 
 
-import lang.nodes.dotutils.DotFile;
-import lang.nodes.environment.Env;
 import lang.nodes.LangVisitor;
 
 public class BoolLit extends Exp{
@@ -17,6 +15,5 @@ public class BoolLit extends Exp{
 
 
       public void accept(LangVisitor v){v.visit(this);}
-
 
 }

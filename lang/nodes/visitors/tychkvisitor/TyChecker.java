@@ -302,6 +302,18 @@ public class TyChecker extends LangVisitor {
         }
     }
 
+    public void visit(UMinus e) {
+        e.getRight().accept(this);
+        VType td = stk.pop();
+        if (td.getTypeValue() == CLTypes.INT) {
+            stk.push(VTyInt.newInt());
+        } else if (td.getTypeValue() == CLTypes.FLOAT) {
+            stk.push(VTyFloat.newFloat());
+        }else {
+            throw new RuntimeException(" Erro de tipo (" + e.getLine() + ", " + e.getCol() + ").");
+        }
+    }
+
     public void visit(Var e) {
         VType ty = lolangtx.get(e.getName());
         if (ty == null) {

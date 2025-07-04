@@ -1,11 +1,6 @@
 package lang.nodes.expr;
 
 
-import lang.nodes.dotutils.DotFile;
-import lang.nodes.environment.Env;
-import lang.nodes.LangVisitor;
-
-
 public abstract class BinOp extends Exp {
       private Exp left, rigth;
 
@@ -17,7 +12,6 @@ public abstract class BinOp extends Exp {
 
       public Exp getLeft(){return left;}
       public Exp getRight(){return rigth;}
-
 
 }
 

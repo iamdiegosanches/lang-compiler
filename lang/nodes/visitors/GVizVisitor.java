@@ -175,6 +175,12 @@ public  class GVizVisitor extends LangVisitor{
           subNode = root;
      }
 
+     public void visit(UMinus e) {
+          int root = gf.addNode("-");
+          e.getRight().accept(this);
+          gf.addEdge(root,subNode);
+          subNode = root;
+     }
 
      public void visit(Var e){
           subNode = gf.addNode(e.getName());

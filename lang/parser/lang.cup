@@ -117,6 +117,7 @@ expr ::= expr:e1 PLUS:t expr:e2           {: RESULT = new Plus(tleft,tright,e1,e
 //       | expr:e1 NOT_EQUAL:t expr:e2      {: RESULT = new NotEqual(tleft,tright,e1,e2);    :}
        | expr:e1 MOD:t expr:e2            {: RESULT = new Mod(tleft,tright,e1,e2);         :}
        | NOT:t expr:e                     {: RESULT = new Not(tleft, tright, e);           :}
+       | MINUS:t expr:e                     {: RESULT = new UMinus(tleft, tright, e);      :}
        | OPEN_PAREN expr:e CLOSE_PAREN      {: RESULT = e;                                   :}
        | INT:n	                       {: RESULT = new IntLit(nleft,nright,n);          :}
        | FLOAT:n	                     {: RESULT = new FloatLit(nleft,nright,n);        :}

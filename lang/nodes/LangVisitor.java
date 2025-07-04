@@ -31,6 +31,7 @@ public abstract class LangVisitor{
     public abstract void visit(LessThan e);
     public abstract void visit(Equal e);
     public abstract void visit(Not e);
+    public abstract void visit(UMinus e);
     public abstract void visit(FCall e);
     public abstract void visit(IntLit e);
     public abstract void visit(BoolLit e);
