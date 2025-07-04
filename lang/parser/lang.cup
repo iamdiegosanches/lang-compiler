@@ -69,14 +69,13 @@ precedence left CLOSE_PAREN;
 
 /* The grammar rules */
 
-prog ::= fun:xs                           {: RESULT = xs; :}
+prog ::= cmdList:xs                           {: RESULT = xs; :}
        ;
 
-/*  public FunDef(int l, int c, String s, ArrayList<Bind> params, CType ret, CNode body){ */
+/*  Não implementado pois precisa ser reestruturado */
 fun ::= ID:id OPEN_PAREN params:ps CLOSE_PAREN COLON btype:ret block:body
        {: RESULT = new FunDef(idleft, idright, id, ps, ret, body); :}
        ;
-
 
 params ::= param:p COMMA params:ps        {: ps.add(0, p); RESULT = ps; :}
        | param:p                          {: ArrayList<Bind> list = new ArrayList<>(); list.add(p); RESULT = list; :}

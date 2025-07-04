@@ -127,7 +127,7 @@ public class InterpVisitor extends LangVisitor {
                 stk.push(ie - id);
             }
         } else {
-            throw new RuntimeException("Operção não ptermitida entre os tipos " + e.getLine() + ", " + e.getCol() + ".");
+            throw new RuntimeException("Operção não permitida entre os tipos " + e.getLine() + ", " + e.getCol() + ".");
         }
     }
 
@@ -147,7 +147,7 @@ public class InterpVisitor extends LangVisitor {
                 stk.push(ie + id);
             }
         } else {
-            throw new RuntimeException("Operção não ptermitida entre os tipos " + e.getLine() + ", " + e.getCol() + ".");
+            throw new RuntimeException("Operção não permitida entre os tipos " + e.getLine() + ", " + e.getCol() + ".");
         };
     }
 
@@ -167,7 +167,7 @@ public class InterpVisitor extends LangVisitor {
                 stk.push(ie * id);
             }
         } else {
-            throw new RuntimeException("Operção não ptermitida entre os tipos " + e.getLine() + ", " + e.getCol() + ".");
+            throw new RuntimeException("Operção não permitida entre os tipos " + e.getLine() + ", " + e.getCol() + ".");
         }
     }
 
@@ -187,27 +187,23 @@ public class InterpVisitor extends LangVisitor {
                 stk.push(ie / id);
             }
         } else {
-            throw new RuntimeException("Operção não ptermitida entre os tipos " + e.getLine() + ", " + e.getCol() + ".");
+            throw new RuntimeException("Operção não permitida entre os tipos " + e.getLine() + ", " + e.getCol() + ".");
         }
     }
 
     public void visit(Mod e) {
         e.getLeft().accept(this);
         e.getRight().accept(this);
-                if (stk.peek() instanceof Integer) {
+        if (stk.peek() instanceof Integer) {
             Integer id = (Integer) stk.pop();
             if (stk.peek() instanceof Integer) {
                 Integer ie = (Integer) stk.pop();
                 stk.push(ie % id);
-            }
-        } else if (stk.peek() instanceof Float) {
-            Float id = (Float) stk.pop();
-            if (stk.peek() instanceof Float) {
-                Float ie = (Float) stk.pop();
-                stk.push(ie % id);
+            } else {
+                throw new RuntimeException("Operção não permitida entre os tipos " + e.getLine() + ", " + e.getCol() + ". O operador de módulo '%' espera operandos do tipo 'Int'.");
             }
         } else {
-            throw new RuntimeException("Operção não ptermitida entre os tipos " + e.getLine() + ", " + e.getCol() + ".");
+            throw new RuntimeException("Operção não permitida entre os tipos " + e.getLine() + ", " + e.getCol() + ". O operador de módulo '%' espera operandos do tipo 'Int'.");
         }
     }
 

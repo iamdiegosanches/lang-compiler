@@ -231,16 +231,18 @@ public class TyChecker extends LangVisitor {
     public void visit(Mod e) {
         e.getLeft().accept(this);
         e.getRight().accept(this);
-        VType td = stk.pop();
-        VType te = stk.pop();
-        if (td.getTypeValue() == CLTypes.INT &&
-            te.getTypeValue() == CLTypes.INT) {
-            stk.push(VTyInt.newInt());
-        } else if (td.getTypeValue() == CLTypes.FLOAT &&
-            te.getTypeValue() == CLTypes.FLOAT) {
-            stk.push(VTyFloat.newFloat());
+
+        VType rightType = stk.pop();
+        VType leftType = stk.pop();
+
+        if (leftType.getTypeValue() == CLTypes.INT && rightType.getTypeValue() == CLTypes.INT) {
+            stk.push(VTyInt.newInt()); 
         } else {
-            throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + ") Operandos incompatíveis");
+            String errorMsg = "Erro de Tipo (" + e.getLine() + ", " + e.getCol() + "): " +
+                            "O operador de módulo '%' espera operandos do tipo 'Int'.\n" +
+                            "\t- Operando da esquerda é do tipo '" + leftType.toString() + "'.\n" +
+                            "\t- Operando da direita é do tipo '" + rightType.toString() + "'.";
+            throw new RuntimeException(errorMsg);
         }
     }
 
