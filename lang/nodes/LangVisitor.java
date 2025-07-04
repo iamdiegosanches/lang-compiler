@@ -21,6 +21,7 @@ public abstract class LangVisitor{
     public abstract void visit(Print d);
 
     public abstract void visit(BinOp e);
+    public abstract void visit(UnOp e);
     public abstract void visit(Sub  e);
     public abstract void visit(Plus e);
     public abstract void visit(Times e);
@@ -29,6 +30,7 @@ public abstract class LangVisitor{
     public abstract void visit(Var e);
     public abstract void visit(LessThan e);
     public abstract void visit(Equal e);
+    public abstract void visit(Not e);
     public abstract void visit(FCall e);
     public abstract void visit(IntLit e);
     public abstract void visit(BoolLit e);

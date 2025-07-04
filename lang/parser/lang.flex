@@ -86,7 +86,7 @@ CHAR  = \'([^\\'\n\r]|\\[nrt'\\]|\\[0-9]{3})\'
     "%"         { return new Symbol(LangParserSym.MOD, yyline + 1, yycolumn + 1); }
     "<"         { return new Symbol(LangParserSym.LESS_THAN, yyline + 1, yycolumn + 1); }
 //    ">"         { return new Symbol(LangParserSym.GREATER_THAN, yyline + 1, yycolumn + 1); }
-//    "!"         { return new Symbol(LangParserSym.NOT, yyline + 1, yycolumn + 1); }
+    "!"         { return new Symbol(LangParserSym.NOT, yyline + 1, yycolumn + 1); }
     "("         { return new Symbol(LangParserSym.OPEN_PAREN, yyline + 1, yycolumn + 1); }
     ")"         { return new Symbol(LangParserSym.CLOSE_PAREN, yyline + 1, yycolumn + 1); }
 //    "["         { return new Symbol(LangParserSym.OPEN_BRACKET, yyline + 1, yycolumn + 1); }

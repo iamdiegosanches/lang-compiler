@@ -163,6 +163,7 @@ public class TyChecker extends LangVisitor {
     }
 
     public void visit(BinOp e) {}
+    public void visit(UnOp e) {}
 
     public void visit(Sub e) {
         e.getLeft().accept(this);
@@ -288,6 +289,16 @@ public class TyChecker extends LangVisitor {
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + 
                                        "): Tipos incompatíveis para o operador '=='.");
+        }
+    }
+
+    public void visit(Not e) {
+        e.getRight().accept(this);
+        VType td = stk.pop();
+        if (td.getTypeValue() == CLTypes.BOOL) {
+            stk.push(VTyBool.newBool());
+        } else {
+            throw new RuntimeException(" Erro de tipo (" + e.getLine() + ", " + e.getCol() + ") deve ser Bool.");
         }
     }
 

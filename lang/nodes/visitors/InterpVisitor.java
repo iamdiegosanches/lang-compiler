@@ -111,6 +111,8 @@ public class InterpVisitor extends LangVisitor {
 
     public void visit(BinOp e) {}
 
+    public void visit(UnOp e) {}
+
     public void visit(Sub e) {
         e.getLeft().accept(this);
         e.getRight().accept(this);
@@ -235,6 +237,21 @@ public class InterpVisitor extends LangVisitor {
         Object left = stk.pop();
 
         stk.push(left.equals(right));
+    }
+    
+    public void visit(Not e) {
+        e.getRight().accept(this);
+
+        if (stk.peek() instanceof Boolean) {
+            Boolean right = (Boolean) stk.pop();
+            if (right == true) {
+                stk.push(false);
+            } else {
+                stk.push(true);
+            }
+        } else {
+            throw new RuntimeException(" Operação não permitida com o tipo " + e.getLine() + ", " + e.getCol() + ".");
+        }
     }
 
     public void visit(Var e) {

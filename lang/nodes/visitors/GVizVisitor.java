@@ -106,6 +106,7 @@ public  class GVizVisitor extends LangVisitor{
      }
 
      public void visit(BinOp e){ }
+     public void visit(UnOp e) { }
      public void visit(Sub  e){
           int root = gf.addNode("-");
           e.getLeft().accept(this);
@@ -162,6 +163,13 @@ public  class GVizVisitor extends LangVisitor{
           int root = gf.addNode("==");
           e.getLeft().accept(this);
           gf.addEdge(root,subNode);
+          e.getRight().accept(this);
+          gf.addEdge(root,subNode);
+          subNode = root;
+     }
+
+     public void visit(Not e) {
+          int root = gf.addNode("!");
           e.getRight().accept(this);
           gf.addEdge(root,subNode);
           subNode = root;

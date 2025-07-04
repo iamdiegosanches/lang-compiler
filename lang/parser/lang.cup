@@ -30,6 +30,7 @@ scan with {: return s.nextToken(); :};
 */
 
 terminal                    PLUS, MINUS, MULT, DIV, MOD;
+terminal                    NOT;
 terminal                    LESS_THAN, EQUAL_EQUAL;
 terminal                    OPEN_PAREN, CLOSE_PAREN;
 terminal                    OPEN_BRACE, CLOSE_BRACE;
@@ -63,7 +64,7 @@ precedence left LESS_THAN;
 precedence left PLUS, MINUS;
 precedence left MULT, MOD, DIV;
 
-// precedence right NOT;
+precedence right NOT;
 // precedence right UMINUS;
 precedence left CLOSE_PAREN; 
 
@@ -115,6 +116,7 @@ expr ::= expr:e1 PLUS:t expr:e2           {: RESULT = new Plus(tleft,tright,e1,e
        | expr:e1 EQUAL_EQUAL:t expr:e2    {: RESULT = new Equal(tleft,tright,e1,e2);       :}
 //       | expr:e1 NOT_EQUAL:t expr:e2      {: RESULT = new NotEqual(tleft,tright,e1,e2);    :}
        | expr:e1 MOD:t expr:e2            {: RESULT = new Mod(tleft,tright,e1,e2);         :}
+       | NOT:t expr:e                     {: RESULT = new Not(tleft, tright, e);           :}
        | OPEN_PAREN expr:e CLOSE_PAREN      {: RESULT = e;                                   :}
        | INT:n	                       {: RESULT = new IntLit(nleft,nright,n);          :}
        | FLOAT:n	                     {: RESULT = new FloatLit(nleft,nright,n);        :}
