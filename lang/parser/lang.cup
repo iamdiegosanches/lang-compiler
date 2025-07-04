@@ -31,12 +31,13 @@ scan with {: return s.nextToken(); :};
 
 terminal                    PLUS, MINUS, MULT, DIV, MOD;
 terminal                    NOT;
-terminal                    LESS_THAN, EQUAL_EQUAL;
+terminal                    LESS_THAN, EQUAL_EQUAL, NOT_EQUAL;
 terminal                    OPEN_PAREN, CLOSE_PAREN;
 terminal                    OPEN_BRACE, CLOSE_BRACE;
 terminal                    SEMICOLON, PRINT, ITERATE;
 terminal                    COMMA, COLON, DOUBLE_COLON;
 terminal                    INT_TYPE, FLOAT_TYPE, BOOL_TYPE;
+terminal                    AND;
 
 terminal Integer            INT;
 terminal Float              FLOAT;
@@ -57,8 +58,8 @@ non terminal ArrayList<Bind> params;
 */
 
 //precedence left OR;
-//precedence left AND;
-precedence left EQUAL_EQUAL;
+precedence left AND;
+precedence left EQUAL_EQUAL, NOT_EQUAL;
 precedence left LESS_THAN;
 
 precedence left PLUS, MINUS;
@@ -108,13 +109,14 @@ btype ::= INT_TYPE:t                        {: RESULT = new TyInt(tleft, tright)
 block ::= OPEN_BRACE cmdList:e CLOSE_BRACE  {: RESULT = e; :}
        ;
 
-expr ::= expr:e1 PLUS:t expr:e2           {: RESULT = new Plus(tleft,tright,e1,e2);        :}
+expr ::= expr:e1 AND:t expr:e2            {: RESULT = new And(tleft,tright,e1,e2);         :}
+       | expr:e1 PLUS:t expr:e2           {: RESULT = new Plus(tleft,tright,e1,e2);        :}
        | expr:e1 MULT:t expr:e2           {: RESULT = new Times(tleft,tright,e1,e2);       :}
        | expr:e1 MINUS:t expr:e2          {: RESULT = new Sub(tleft,tright,e1,e2);         :}
        | expr:e1 DIV:t expr:e2            {: RESULT = new Div(tleft,tright,e1,e2);         :}
        | expr:e1 LESS_THAN:t expr:e2      {: RESULT = new LessThan(tleft,tright,e1,e2);    :}
        | expr:e1 EQUAL_EQUAL:t expr:e2    {: RESULT = new Equal(tleft,tright,e1,e2);       :}
-//       | expr:e1 NOT_EQUAL:t expr:e2      {: RESULT = new NotEqual(tleft,tright,e1,e2);    :}
+       | expr:e1 NOT_EQUAL:t expr:e2      {: RESULT = new NotEqual(tleft,tright,e1,e2);     :}
        | expr:e1 MOD:t expr:e2            {: RESULT = new Mod(tleft,tright,e1,e2);         :}
        | NOT:t expr:e                     {: RESULT = new Not(tleft, tright, e);           :}
        | MINUS:t expr:e                     {: RESULT = new UMinus(tleft, tright, e);      :}

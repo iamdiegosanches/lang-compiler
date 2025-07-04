@@ -71,8 +71,8 @@ CHAR  = \'([^\\'\n\r]|\\[nrt'\\]|\\[0-9]{3})\'
 //    "null"      { return new Symbol(LangParserSym.NULL, yyline + 1, yycolumn + 1); }
 
     "=="        { return new Symbol(LangParserSym.EQUAL_EQUAL, yyline + 1, yycolumn + 1); }
-//    "!="        { return new Symbol(LangParserSym.NOT_EQUAL, yyline + 1, yycolumn + 1); }
-//    "&&"        { return new Symbol(LangParserSym.AND, yyline + 1, yycolumn + 1); }
+    "!="        { return new Symbol(LangParserSym.NOT_EQUAL, yyline + 1, yycolumn + 1); }
+    "&&"        { return new Symbol(LangParserSym.AND, yyline + 1, yycolumn + 1); }
     "::"        { return new Symbol(LangParserSym.DOUBLE_COLON, yyline + 1, yycolumn + 1); }
     ":"         { return new Symbol(LangParserSym.COLON, yyline + 1, yycolumn + 1); }
     ";"         { return new Symbol(LangParserSym.SEMICOLON, yyline + 1, yycolumn + 1); }

@@ -109,6 +109,20 @@ public class InterpVisitor extends LangVisitor {
         }
     }
 
+    public void visit(And e) {
+        e.getLeft().accept(this);
+        e.getRight().accept(this);
+
+        Object right = stk.pop();
+        Object left = stk.pop();
+
+        if (left instanceof Boolean && right instanceof Boolean) {
+            stk.push((Boolean)left && (Boolean)right);
+        } else {
+            throw new RuntimeException("Operação '&&' não permitida entre os tipos " + e.getLine() + ", " + e.getCol() + ". Esperado 'Bool' em ambos os operandos.");
+        }
+    }
+
     public void visit(BinOp e) {}
 
     public void visit(UnOp e) {}
@@ -239,6 +253,16 @@ public class InterpVisitor extends LangVisitor {
         stk.push(left.equals(right));
     }
     
+    public void visit(NotEqual e) {
+        e.getLeft().accept(this);
+        e.getRight().accept(this);
+
+        Object right = stk.pop();
+        Object left = stk.pop();
+
+        stk.push(!left.equals(right));
+    }
+
     public void visit(Not e) {
         e.getRight().accept(this);
 

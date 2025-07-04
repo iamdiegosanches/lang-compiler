@@ -24,6 +24,7 @@ public  class SimpleVisitor extends LangVisitor{
     public void visit(Return d) { }
     public void visit(Print d) { }
 
+    public void visit(And e) { }
     public void visit(BinOp e) { }
     public void visit(UnOp e) { }
     public void visit(Sub  e) { }
@@ -34,6 +35,7 @@ public  class SimpleVisitor extends LangVisitor{
     public void visit(Var e) { }
     public void visit(LessThan e) { }
     public void visit(Equal e) { }
+    public void visit(NotEqual e) { }
     public void visit(Not e) { }
     public void visit(UMinus e) { }
     public void visit(FCall e) { }

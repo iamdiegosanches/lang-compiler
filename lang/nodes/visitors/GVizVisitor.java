@@ -5,7 +5,6 @@ import lang.nodes.expr.*;
 import lang.nodes.command.*;
 import lang.nodes.types.*;
 import lang.nodes.*;
-import lang.nodes.LangVisitor;
 import lang.nodes.dotutils.DotFile;
 
 public  class GVizVisitor extends LangVisitor{
@@ -105,6 +104,15 @@ public  class GVizVisitor extends LangVisitor{
           subNode = root;
      }
 
+     public void visit(And e) {
+          int root = gf.addNode("&&");
+          e.getLeft().accept(this);
+          gf.addEdge(root,subNode);
+          e.getRight().accept(this);
+          gf.addEdge(root,subNode);
+          subNode = root;
+     }
+
      public void visit(BinOp e){ }
      public void visit(UnOp e) { }
      public void visit(Sub  e){
@@ -161,6 +169,15 @@ public  class GVizVisitor extends LangVisitor{
 
      public void visit(Equal e) {
           int root = gf.addNode("==");
+          e.getLeft().accept(this);
+          gf.addEdge(root,subNode);
+          e.getRight().accept(this);
+          gf.addEdge(root,subNode);
+          subNode = root;
+     }
+
+     public void visit(NotEqual e) {
+          int root = gf.addNode("!=");
           e.getLeft().accept(this);
           gf.addEdge(root,subNode);
           e.getRight().accept(this);

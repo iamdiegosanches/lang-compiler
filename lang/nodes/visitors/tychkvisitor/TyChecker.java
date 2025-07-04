@@ -162,6 +162,23 @@ public class TyChecker extends LangVisitor {
 
     }
 
+    public void visit(And e){
+        e.getLeft().accept(this);
+        e.getRight().accept(this);
+
+        VType rightType = stk.pop();
+        VType leftType = stk.pop();
+
+        if (leftType.getTypeValue() == CLTypes.BOOL && rightType.getTypeValue() == CLTypes.BOOL) {
+            stk.push(VTyBool.newBool());
+        } else {
+            throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + 
+                                       "): Operador '&&' espera operandos do tipo 'Bool'.\n" +
+                                       "\t- Operando da esquerda é do tipo '" + leftType.toString() + "'.\n" +
+                                       "\t- Operando da direita é do tipo '" + rightType.toString() + "'.");
+        }
+    }
+
     public void visit(BinOp e) {}
     public void visit(UnOp e) {}
 
@@ -289,6 +306,34 @@ public class TyChecker extends LangVisitor {
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + 
                                        "): Tipos incompatíveis para o operador '=='.");
+        }
+    }
+
+    public void visit(NotEqual e) {
+        e.getLeft().accept(this);
+        e.getRight().accept(this);
+
+        VType td = stk.pop();
+        VType te = stk.pop();
+
+        if (te.getTypeValue() == td.getTypeValue()) {
+            
+            switch (te.getTypeValue()) {
+                case CLTypes.INT:
+                case CLTypes.FLOAT:
+                case CLTypes.BOOL:
+                    
+                    stk.push(VTyBool.newBool());
+                    break;
+                    
+                default:
+                    throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + 
+                                               "): Operador '!=' não pode ser aplicado a operandos do tipo " + te.getTypeValue());
+            }
+
+        } else {
+            throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + 
+                                       "): Tipos incompatíveis para o operador '!='.");
         }
     }
 
