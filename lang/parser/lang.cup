@@ -70,6 +70,8 @@ precedence right NOT;
 // precedence right UMINUS;
 precedence left CLOSE_PAREN; 
 
+precedence nonassoc ELSE;
+
 /* The grammar rules */
 
 prog ::= cmdList:xs                           {: RESULT = xs; :}
@@ -94,8 +96,9 @@ cmdList ::= cmd:c                         {: RESULT = c; :}
        ;
 
 /*   public Loop(int l, int c, Exp e, CNode body){*/
-cmd ::=  ID:id ASSIGN expr:e SEMICOLON                          {: RESULT = new CAttr(idleft, idright, new Var(idleft, idright, id), e); :}
-       | btype:t ID:id ASSIGN expr:e SEMICOLON                  {: RESULT = new CDecl(tleft, tright, t, new Var(idleft, idright, id), e); :}
+cmd ::= block:b                                                {: RESULT = b; :}   
+       | ID:id ASSIGN expr:e SEMICOLON                         {: RESULT = new CAttr(idleft, idright, new Var(idleft, idright, id), e); :}
+       | btype:t ID:id ASSIGN expr:e SEMICOLON                 {: RESULT = new CDecl(tleft, tright, t, new Var(idleft, idright, id), e); :}
        | PRINT:p expr:e SEMICOLON                              {: RESULT = new Print(pleft, pright, e); :}
        | ITERATE:i OPEN_PAREN itcond:e CLOSE_PAREN cmd:c       {: RESULT = new Loop(ileft, iright, e, c); :}
        | IF:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c1             {: RESULT = new If(ileft, iright, e, c1, null); :}

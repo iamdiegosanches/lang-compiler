@@ -16,25 +16,58 @@ public class TyChecker extends LangVisitor {
     private LinkedList < String > errors;
     private Stack < VType > stk;
     private Hashtable < String, TypeEntry > ctx;
-    private Hashtable < String, VType > lolangtx;
+
+    // private Hashtable < String, VType > lolangtx;
+
+    private Stack < Hashtable < String, VType >> tyEnv;
 
     public TyChecker() {
         errors = new LinkedList < String > ();
         stk = new Stack < VType > ();
         ctx = new Hashtable < String, TypeEntry > ();
+
+        tyEnv = new Stack <>();
+    }
+
+    private void enterScope() {
+        tyEnv.push(new Hashtable<String, VType>());
+    }
+
+    private void leaveScope() {
+        tyEnv.pop();
+    }
+
+    private void declareVar(String name, VType type, int line, int col) {
+        Hashtable<String, VType> currentScope = tyEnv.peek();
+        if (currentScope.containsKey(name)) {
+            throw new RuntimeException(
+                "Erro Semântico (" + line + ", " + col + "): Variável '" + name + "' já foi declarada neste escopo."
+            );
+        }
+        currentScope.put(name, type);
+    }
+
+    private VType findVar(String name) {
+        for (int i = tyEnv.size() - 1; i >= 0; i--) {
+            Hashtable<String, VType> scope = tyEnv.get(i);
+            if (scope.containsKey(name)) {
+                return scope.get(name);
+            }
+        }
+        return null; // Retorna null se não encontrar
     }
 
     public void visit(Program p) {
         collectType(p.getFuncs());
         for (FunDef f: p.getFuncs()) {
-            lolangtx = ctx.get(f.getFname()).localCtx;
+            tyEnv.clear();
+            tyEnv.push(ctx.get(f.getFname()).localCtx); 
             f.accept(this);
         }
     }
 
     private void collectType(ArrayList < FunDef > lf) {
         for (FunDef f: lf) {
-
             TypeEntry e = new TypeEntry();
             e.sym = f.getFname();
             e.localCtx = new Hashtable < String, VType > ();
@@ -51,21 +84,13 @@ public class TyChecker extends LangVisitor {
             }
 
             e.ty = new VTyFunc(v);
-
             ctx.put(f.getFname(), e);
         }
     }
 
     public void visit(FunDef d) {
-
         d.getRet().accept(this);
-
-        for (Bind b: d.getParams()) {
-            b.accept(this);
-
-        }
         d.getBody().accept(this);
-
     }
 
     public void visit(Bind d) {
@@ -86,13 +111,13 @@ public class TyChecker extends LangVisitor {
     public void visit(CAttr d) {
         String varName = d.getVar().getName();
 
-        if (!lolangtx.containsKey(varName)) {
+        VType varType = findVar(varName);
+
+        if (varType == null) {
             throw new RuntimeException(
                 "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Variável '" + varName + "' não foi declarada."
             );
         }
-
-        VType varType = lolangtx.get(varName);
 
         d.getExp().accept(this);
         VType expType = stk.pop();
@@ -105,14 +130,6 @@ public class TyChecker extends LangVisitor {
     }
 
     public void visit(CDecl d) {
-        String varName = d.getVar().getName();
-
-        if (lolangtx.containsKey(varName)) {
-            throw new RuntimeException(
-            "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Variável '" + varName + "' já foi declarada."
-            );
-        }
-
         d.getExp().accept(this);
         VType expType = stk.pop();
 
@@ -121,12 +138,13 @@ public class TyChecker extends LangVisitor {
 
         if (!varType.match(expType)) {
             throw new RuntimeException(
-                "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipos incompatíveis na declaração de '" + varName + "'."
+                "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipos incompatíveis na declaração de '" + d.getVar().getName() + "'."
             );
         }
-
-        lolangtx.put(varName, varType);
+        
+        declareVar(d.getVar().getName(), varType, d.getLine(), d.getCol());
     }
+    
 
     public void visit(Loop d) {
 
@@ -144,37 +162,26 @@ public class TyChecker extends LangVisitor {
     }
 
     public void visit(If d) {
+        // Lógica de verificação da condição (permanece igual)
         d.getCond().accept(this);
         VType tyc = stk.pop();
-
         if (!(tyc.getTypeValue() == CLTypes.BOOL)) {
             throw new RuntimeException(
-                "Erro de tipo (" + d.getLine() + ", " +
-                d.getCol() +
-                ") condição do teste deve ser bool"
+                "Erro de tipo (" + d.getLine() + ", " + d.getCol() + ") condição do teste deve ser bool"
             );
         }
-        Hashtable < String, VType > lcal1 = (Hashtable < String, VType > ) lolangtx.clone();
-
+        
+        // --- MUDANÇA: Lógica de escopo simplificada e correta ---
+        // Analisa o ramo THEN em um novo escopo
+        enterScope();
         d.getThn().accept(this);
+        leaveScope();
 
-
+        // Se houver um ramo ELSE, analisa-o em outro novo escopo
         if (d.getEls() != null) {
-            Hashtable < String, VType > lcal2 = (Hashtable < String, VType > ) lolangtx.clone();
-            lolangtx = lcal1;
+            enterScope();
             d.getEls().accept(this);
-            LinkedList < String > keys = new LinkedList < String > ();
-            for (java.util.Map.Entry < String, VType > ent: lolangtx.entrySet()) {
-                if (!lcal2.containsKey(ent.getKey())) {
-                    keys.add(ent.getKey());
-                    //System.out.println("To remove " + ent.getKey());
-                }
-            }
-            for (String k: keys) {
-                lolangtx.remove(k);
-            }
-        } else {
-            lolangtx = lcal1;
+            leaveScope();
         }
     }
 
@@ -346,7 +353,7 @@ public class TyChecker extends LangVisitor {
     }
 
     public void visit(Var e) {
-        VType ty = lolangtx.get(e.getName());
+        VType ty = findVar(e.getName());
         if (ty == null) {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + ") variavel não declarada: " + e.getName());
         } else {
