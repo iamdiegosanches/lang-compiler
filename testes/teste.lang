@@ -1,2 +1,32 @@
-print -(1+1*2);
+Int a = 10;
+Float b = 3.14;
+Bool c = true;
 
+a = a + 5;
+
+print a;
+
+Int x = 2;
+Int y = 5;
+Int z = 4;
+
+Int resultado = x * (y + z);
+print resultado;
+
+resultado = (a + 5) * 2;
+print resultado;
+
+Float f_res = 10.0 / 4.0;
+print f_res;
+
+print 15 % 4;
+Bool comp = resultado == 40;
+print comp;
+
+comp = resultado < 100;
+print comp;
+
+comp = !false;
+print comp;
+
+print 777;

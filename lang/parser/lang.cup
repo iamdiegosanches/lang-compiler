@@ -31,12 +31,13 @@ scan with {: return s.nextToken(); :};
 
 terminal                    PLUS, MINUS, MULT, DIV, MOD;
 terminal                    NOT;
-terminal                    LESS_THAN, EQUAL_EQUAL;
+terminal                    LESS_THAN, EQUAL_EQUAL, ASSIGN;
 terminal                    OPEN_PAREN, CLOSE_PAREN;
 terminal                    OPEN_BRACE, CLOSE_BRACE;
 terminal                    SEMICOLON, PRINT, ITERATE;
 terminal                    COMMA, COLON, DOUBLE_COLON;
 terminal                    INT_TYPE, FLOAT_TYPE, BOOL_TYPE;
+terminal                    IF, ELSE;
 
 terminal Integer            INT;
 terminal Float              FLOAT;
@@ -56,6 +57,7 @@ non terminal ArrayList<Bind> params;
   prioridade.
 */
 
+precedence left SEMICOLON;
 //precedence left OR;
 //precedence left AND;
 precedence left EQUAL_EQUAL;
@@ -87,13 +89,17 @@ param ::= ID:id DOUBLE_COLON btype:t
        {: RESULT = new Bind(idleft, idright, t, new Var(idleft, idright, id)); :}
        ;
 
-cmdList ::= cmd:x cmdList:xs              {: RESULT = new CSeq(xleft, xright, x, xs); :}
-       |    cmd:x                         {: RESULT = x; :}
+cmdList ::= cmd:c                         {: RESULT = c; :}
+       |    cmdList:cl cmd:c              {: RESULT = new CSeq(clleft, clright, cl, c); :}
        ;
 
 /*   public Loop(int l, int c, Exp e, CNode body){*/
-cmd ::=  PRINT:p expr:e SEMICOLON                              {: RESULT = new Print(pleft, pright, e); :}
+cmd ::=  ID:id ASSIGN expr:e SEMICOLON                          {: RESULT = new CAttr(idleft, idright, new Var(idleft, idright, id), e); :}
+       | btype:t ID:id ASSIGN expr:e SEMICOLON                  {: RESULT = new CDecl(tleft, tright, t, new Var(idleft, idright, id), e); :}
+       | PRINT:p expr:e SEMICOLON                              {: RESULT = new Print(pleft, pright, e); :}
        | ITERATE:i OPEN_PAREN itcond:e CLOSE_PAREN cmd:c       {: RESULT = new Loop(ileft, iright, e, c); :}
+       | IF:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c1             {: RESULT = new If(ileft, iright, e, c1, null); :}
+       | IF:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c1 ELSE cmd:c2 {: RESULT = new If(ileft, iright, e, c1, c2); :}
        ;
 
 itcond ::= ID COLON expr:e         {: RESULT = e; :}    /*Falta implementar essa parte na AST*/
@@ -123,6 +129,8 @@ expr ::= expr:e1 PLUS:t expr:e2           {: RESULT = new Plus(tleft,tright,e1,e
        | FLOAT:n	                     {: RESULT = new FloatLit(nleft,nright,n);        :}
        | TRUE:n	                     {: RESULT = new BoolLit(nleft,nright,n);         :}
        | FALSE:n	                     {: RESULT = new BoolLit(nleft,nright,n);         :}
+       | ID:n                             {: RESULT = new Var(nleft,nright,n);             :}
+
        ;
 
 /*op ::= AND:

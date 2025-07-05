@@ -69,6 +69,14 @@ public class InterpVisitor extends LangVisitor {
         }
     }
 
+    public void visit(CDecl d) {
+        if (!retMode) {
+            d.getExp().accept(this); // Avalia a expressão, o valor fica na pilha
+            Object value = stk.pop();
+            env.store(d.getVar().getName(), value); // Armazena o valor no ambiente
+        }
+    }
+
     public void visit(Loop d) {
         if (!retMode) {
             d.getCond().accept(this);

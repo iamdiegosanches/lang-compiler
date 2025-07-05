@@ -61,8 +61,8 @@ CHAR  = \'([^\\'\n\r]|\\[nrt'\\]|\\[0-9]{3})\'
 
 //    "data"      { return new Symbol(LangParserSym.DATA, yyline + 1, yycolumn + 1); }
 //    "abstract"  { return new Symbol(LangParserSym.ABSTRACT, yyline + 1, yycolumn + 1); }
-//    "if"        { return new Symbol(LangParserSym.IF, yyline + 1, yycolumn + 1); }
-//    "else"      { return new Symbol(LangParserSym.ELSE, yyline + 1, yycolumn + 1); }
+    "if"        { return new Symbol(LangParserSym.IF, yyline + 1, yycolumn + 1); }
+    "else"      { return new Symbol(LangParserSym.ELSE, yyline + 1, yycolumn + 1); }
 //    "return"    { return new Symbol(LangParserSym.RETURN, yyline + 1, yycolumn + 1); }
 //    "read"      { return new Symbol(LangParserSym.READ, yyline + 1, yycolumn + 1); }
     "print"     { return new Symbol(LangParserSym.PRINT, yyline + 1, yycolumn + 1); }
@@ -78,7 +78,7 @@ CHAR  = \'([^\\'\n\r]|\\[nrt'\\]|\\[0-9]{3})\'
     ";"         { return new Symbol(LangParserSym.SEMICOLON, yyline + 1, yycolumn + 1); }
     ","         { return new Symbol(LangParserSym.COMMA, yyline + 1, yycolumn + 1); }
 //    "."         { return new Symbol(LangParserSym.DOT, yyline + 1, yycolumn + 1); }
-//    "="         { return new Symbol(LangParserSym.ASSIGN, yyline + 1, yycolumn + 1); }
+    "="         { return new Symbol(LangParserSym.ASSIGN, yyline + 1, yycolumn + 1); }
     "+"         { return new Symbol(LangParserSym.PLUS, yyline + 1, yycolumn + 1); }
     "-"         { return new Symbol(LangParserSym.MINUS, yyline + 1, yycolumn + 1); }
     "*"         { return new Symbol(LangParserSym.MULT, yyline + 1, yycolumn + 1); }

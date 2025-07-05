@@ -84,17 +84,48 @@ public class TyChecker extends LangVisitor {
     }
 
     public void visit(CAttr d) {
-        d.getExp().accept(this);
-        if (lolangtx.get(d.getVar().getName()) == null) {
-            lolangtx.put(d.getVar().getName(), stk.pop());
-        } else {
-            VType ty = lolangtx.get(d.getVar().getName());
-            if (!ty.match(stk.pop())) {
-                throw new RuntimeException(
-                    "Erro de tipo (" + d.getLine() + ", " + d.getCol() + ") tipo da var " + d.getVar().getName() + " incompativel"
-                );
-            }
+        String varName = d.getVar().getName();
+
+        if (!lolangtx.containsKey(varName)) {
+            throw new RuntimeException(
+                "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Variável '" + varName + "' não foi declarada."
+            );
         }
+
+        VType varType = lolangtx.get(varName);
+
+        d.getExp().accept(this);
+        VType expType = stk.pop();
+
+        if (!varType.match(expType)) {
+            throw new RuntimeException(
+                "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipos incompatíveis na atribuição para '" + varName + "'."
+            );
+        }
+    }
+
+    public void visit(CDecl d) {
+        String varName = d.getVar().getName();
+
+        if (lolangtx.containsKey(varName)) {
+            throw new RuntimeException(
+            "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Variável '" + varName + "' já foi declarada."
+            );
+        }
+
+        d.getExp().accept(this);
+        VType expType = stk.pop();
+
+        d.getType().accept(this);
+        VType varType = stk.pop();
+
+        if (!varType.match(expType)) {
+            throw new RuntimeException(
+                "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipos incompatíveis na declaração de '" + varName + "'."
+            );
+        }
+
+        lolangtx.put(varName, varType);
     }
 
     public void visit(Loop d) {
