@@ -16,6 +16,7 @@ public abstract class LangVisitor{
     public abstract void visit(CSeq d);
     public abstract void visit(CAttr d);
     public abstract void visit(Loop d);
+    public abstract void visit(IterateWithVar d);
     public abstract void visit(If d);
     public abstract void visit(Return d);
     public abstract void visit(Print d);

@@ -8,7 +8,7 @@ import lang.nodes.*;
 import lang.nodes.LangVisitor;
 
 
-public  class SimpleVisitor extends LangVisitor{
+public class SimpleVisitor extends LangVisitor{
 
     public void visit(Program p){
          System.out.println("numero de funcoes : " + p.getFuncs().size() );
@@ -20,6 +20,7 @@ public  class SimpleVisitor extends LangVisitor{
     public void visit(CSeq d) { }
     public void visit(CAttr d) { }
     public void visit(Loop d) { }
+    public void visit(IterateWithVar d) { }
     public void visit(If d) { }
     public void visit(Return d) { }
     public void visit(Print d) { }

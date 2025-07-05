@@ -45,7 +45,7 @@ terminal String             ID;
 terminal Boolean            TRUE,FALSE;
 
 /* Non terminals */
-non terminal Exp            expr, itcond;
+non terminal Exp            expr;
 non terminal CNode          prog, cmd, cmdList, fun, block;
 non terminal CType          btype;
 non terminal Bind           param;
@@ -93,12 +93,10 @@ cmdList ::= cmd:x cmdList:xs              {: RESULT = new CSeq(xleft, xright, x,
        ;
 
 /*   public Loop(int l, int c, Exp e, CNode body){*/
-cmd ::=  PRINT:p expr:e SEMICOLON                              {: RESULT = new Print(pleft, pright, e); :}
-       | ITERATE:i OPEN_PAREN itcond:e CLOSE_PAREN cmd:c       {: RESULT = new Loop(ileft, iright, e, c); :}
-       ;
-
-itcond ::= ID COLON expr:e         {: RESULT = e; :}    /*Falta implementar essa parte na AST*/
-       | expr:e                    {: RESULT = e; :}
+cmd ::= block:b                                                {: RESULT = b; :}
+       | PRINT:p expr:e SEMICOLON                               {: RESULT = new Print(pleft, pright, e); :}
+       | ITERATE:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c         {: RESULT = new Loop(ileft, iright, e, c); :}
+       | ITERATE:i OPEN_PAREN ID:id COLON expr:e CLOSE_PAREN cmd:c {: RESULT = new IterateWithVar(ileft, iright, new Var(idleft, idright, id), e, c); :} // Não sei pq mas não esta funcionando
        ;
 
 btype ::= INT_TYPE:t                        {: RESULT = new TyInt(tleft, tright); :}

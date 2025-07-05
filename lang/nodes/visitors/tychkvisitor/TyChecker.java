@@ -98,10 +98,9 @@ public class TyChecker extends LangVisitor {
     }
 
     public void visit(Loop d) {
-
         d.getCond().accept(this);
         VType tyc = stk.pop();
-        if (!(tyc.getTypeValue() == CLTypes.BOOL)) {
+        if (!(tyc.getTypeValue() == CLTypes.INT)) {
             throw new RuntimeException(
                 "Erro de tipo (" + d.getLine() + ", " +
                 d.getCol() +
@@ -111,6 +110,32 @@ public class TyChecker extends LangVisitor {
         }
         d.getBody().accept(this);
     }
+
+    public void visit(IterateWithVar d) {
+        d.getCondExp().accept(this);
+        VType condType = stk.pop();
+        String varName = d.getIterVar().getName();
+        
+        Hashtable<String, VType> oldLocalCtx = (Hashtable<String, VType>) lolangtx.clone();
+
+        if (condType.getTypeValue() == CLTypes.INT) {
+            if (lolangtx.containsKey(varName)) {
+                if (lolangtx.get(varName).getTypeValue() != CLTypes.INT) {
+                    throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + "): Variável '" + varName + "' já declarada com tipo incompatível para iteração inteira.");
+                }
+            } else {
+                lolangtx.put(varName, VTyInt.newInt());
+            }
+        }
+        else {
+            throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + "): Expressão do 'iterate' com variável deve ser um inteiro (ou um array, futuramente).");
+        }
+
+        d.getBody().accept(this);
+        
+        lolangtx = oldLocalCtx;
+    }
+
 
     public void visit(If d) {
         d.getCond().accept(this);

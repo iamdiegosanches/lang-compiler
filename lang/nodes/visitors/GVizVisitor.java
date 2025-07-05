@@ -78,6 +78,18 @@ public  class GVizVisitor extends LangVisitor{
                gf.addEdge(root,subNode);
                subNode=  root;
      }
+
+     public void visit(IterateWithVar d){
+               int root = gf.addNode("IterateWithVar");
+               d.getIterVar().accept(this);
+               gf.addEdge(root,subNode);
+               d.getCondExp().accept(this);
+               gf.addEdge(root,subNode);
+               d.getBody().accept(this);
+               gf.addEdge(root,subNode);
+               subNode=  root;
+     }
+
      public void visit(If d){
                int root = gf.addNode("If");
                d.getCond().accept(this);
