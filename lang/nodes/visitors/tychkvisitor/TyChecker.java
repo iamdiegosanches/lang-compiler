@@ -19,6 +19,7 @@ public class TyChecker extends LangVisitor {
 
     // private Hashtable < String, VType > lolangtx;
 
+    // Uma pilha onde cada elementa da pilha é uma tabela hash que mapeia string para Vtype
     private Stack < Hashtable < String, VType >> tyEnv;
 
     public TyChecker() {
@@ -29,23 +30,43 @@ public class TyChecker extends LangVisitor {
         tyEnv = new Stack <>();
     }
 
-    private void enterScope() {
+    public void enterScope() { // LEMBRAR DE MUDAR PRA PRIVATE DEPOIS
         tyEnv.push(new Hashtable<String, VType>());
     }
 
-    private void leaveScope() {
+    public void leaveScope() { // LEMBRAR DE MUDAR PRA PRIVATE DEPOIS
         tyEnv.pop();
     }
 
+    // private void declareVar(String name, VType type, int line, int col) {
+    //     Hashtable<String, VType> currentScope = tyEnv.peek();
+    //     if (currentScope.containsKey(name)) {
+    //         throw new RuntimeException(
+    //             "Erro Semântico (" + line + ", " + col + "): Variável '" + name + "' já foi declarada neste escopo."
+    //         );
+    //     }
+    //     currentScope.put(name, type);
+    // }
+
     private void declareVar(String name, VType type, int line, int col) {
+        for (int i = tyEnv.size() - 2; i >= 0; i--) {
+            if (tyEnv.get(i).containsKey(name)) {
+                throw new RuntimeException(
+                    "Erro Semântico (" + line + ", " + col + "): Variável '" + name + "' já foi declarada em escopo superior."
+                );
+            }
+        }
+
         Hashtable<String, VType> currentScope = tyEnv.peek();
         if (currentScope.containsKey(name)) {
             throw new RuntimeException(
                 "Erro Semântico (" + line + ", " + col + "): Variável '" + name + "' já foi declarada neste escopo."
             );
         }
+
         currentScope.put(name, type);
     }
+
 
     private VType findVar(String name) {
         for (int i = tyEnv.size() - 1; i >= 0; i--) {
@@ -58,12 +79,16 @@ public class TyChecker extends LangVisitor {
     }
 
     public void visit(Program p) {
+        enterScope();
+
         collectType(p.getFuncs());
         for (FunDef f: p.getFuncs()) {
             tyEnv.clear();
             tyEnv.push(ctx.get(f.getFname()).localCtx); 
             f.accept(this);
         }
+
+        leaveScope();
     }
 
     private void collectType(ArrayList < FunDef > lf) {
@@ -162,7 +187,6 @@ public class TyChecker extends LangVisitor {
     }
 
     public void visit(If d) {
-        // Lógica de verificação da condição (permanece igual)
         d.getCond().accept(this);
         VType tyc = stk.pop();
         if (!(tyc.getTypeValue() == CLTypes.BOOL)) {
@@ -171,13 +195,10 @@ public class TyChecker extends LangVisitor {
             );
         }
         
-        // --- MUDANÇA: Lógica de escopo simplificada e correta ---
-        // Analisa o ramo THEN em um novo escopo
         enterScope();
         d.getThn().accept(this);
         leaveScope();
 
-        // Se houver um ramo ELSE, analisa-o em outro novo escopo
         if (d.getEls() != null) {
             enterScope();
             d.getEls().accept(this);

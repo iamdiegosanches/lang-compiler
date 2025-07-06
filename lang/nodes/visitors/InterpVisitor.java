@@ -91,12 +91,6 @@ public class InterpVisitor extends LangVisitor {
     public void visit(CAttr d) {
         if (!retMode) {
             d.getExp().accept(this);
-            // A atribuição modifica uma variável existente, então precisamos procurar onde ela está
-            // e modificar lá. A forma mais simples para linguagens como a lang é permitir sombreamento
-            // e modificar no escopo mais próximo. A lógica de store já faz isso.
-            // Para ser mais preciso, deveríamos procurar e atualizar, mas o store no escopo atual
-            // é um comportamento comum. Vamos adaptar para procurar e atualizar.
-            
             String varName = d.getVar().getName();
             Object value = stk.pop();
             boolean found = false;

@@ -41,7 +41,9 @@ public class LangCompiler{
         CNode root = (CNode)presult.value;
         if(root != null){
               TyChecker tv = new TyChecker();
+              tv.enterScope();
               root.accept(tv);
+              tv.leaveScope();
               InterpVisitor v = new InterpVisitor();
               root.accept(v);
         }else{
@@ -95,12 +97,13 @@ public class LangCompiler{
               }else if(args.length == 2 && args[0].equals("-dot")){
                     runDot(p,args[fname]);
                     System.exit(0);
-              }else if(args.length == 2 && args[0].equals("-ty")){
-                    interpretAndType(p);
-                    System.exit(0);
               }
+            //   else if(args.length == 2 && args[0].equals("-ty")){
+            //         interpretAndType(p);
+            //         System.exit(0);
+            //   }
               else if(args.length == 2 && args[0].equals("-i")){
-                    interpret(p);
+                    interpretAndType(p);
                     System.exit(0);
               }else if(args.length == 2 && args[0].equals("-id")){
                     interpretDebug(p);
