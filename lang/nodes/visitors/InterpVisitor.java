@@ -9,6 +9,7 @@ import lang.nodes.dotutils.DotFile;
 import lang.nodes.environment.Env;
 import java.util.Stack;
 import java.util.Hashtable;
+import java.util.ArrayList;
 
 public class InterpVisitor extends LangVisitor {
 
@@ -72,13 +73,54 @@ public class InterpVisitor extends LangVisitor {
     public void visit(Loop d) {
         if (!retMode) {
             d.getCond().accept(this);
-            while ((boolean) stk.pop()) {
+            Object loopLimit = stk.pop();
+            if (!(loopLimit instanceof Integer)) {
+                throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Condição do 'iterate' simples deve ser um inteiro.");
+            }
+            int count = (Integer) loopLimit;
+            while (count > 0) {
                 d.getBody().accept(this);
                 if (retMode) {
                     return;
                 }
-                d.getCond().accept(this);
+                count--;
             }
+        }
+    }
+
+    public void visit(IterateWithVar d) {
+        if (!retMode) {
+            d.getCondExp().accept(this);
+            Object iterSource = stk.pop();
+            String varName = d.getIterVar().getName();
+
+            // Cria um NOVO ambiente para o escopo do loop.
+            // Variáveis do ambiente pai são copiadas.
+            Env oldEnv = env;
+            env = new Env();
+            if (oldEnv != null) {
+                 for (java.util.Map.Entry<String, Object> entry : oldEnv.getMap().entrySet()) {
+                     if (!entry.getKey().equals(varName)) {
+                         env.store(entry.getKey(), entry.getValue());
+                     }
+                 }
+            }
+
+
+            if (iterSource instanceof Integer) {
+                int count = (Integer) iterSource;
+                for (int i = 0; i < count; i++) {
+                    env.store(varName, count - i);
+                    d.getBody().accept(this);
+                    if (retMode) {
+                        break;
+                    }
+                }
+            }
+            else {
+                throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Expressão de iteração para 'iterate' com variável deve ser um inteiro (ou um array, futuramente).");
+            }
+            env = oldEnv;
         }
     }
 
@@ -106,6 +148,20 @@ public class InterpVisitor extends LangVisitor {
         if (!retMode) {
             d.getExp().accept(this);
             System.out.println(stk.pop().toString());
+        }
+    }
+
+    public void visit(And e) {
+        e.getLeft().accept(this);
+        e.getRight().accept(this);
+
+        Object right = stk.pop();
+        Object left = stk.pop();
+
+        if (left instanceof Boolean && right instanceof Boolean) {
+            stk.push((Boolean)left && (Boolean)right);
+        } else {
+            throw new RuntimeException("Operação '&&' não permitida entre os tipos " + e.getLine() + ", " + e.getCol() + ". Esperado 'Bool' em ambos os operandos.");
         }
     }
 
@@ -239,6 +295,16 @@ public class InterpVisitor extends LangVisitor {
         stk.push(left.equals(right));
     }
     
+    public void visit(NotEqual e) {
+        e.getLeft().accept(this);
+        e.getRight().accept(this);
+
+        Object right = stk.pop();
+        Object left = stk.pop();
+
+        stk.push(!left.equals(right));
+    }
+
     public void visit(Not e) {
         e.getRight().accept(this);
 
@@ -303,6 +369,11 @@ public class InterpVisitor extends LangVisitor {
         stk.push(e.getValue());
     }
     public void visit(FloatLit e) {
+        stk.push(e.getValue());
+    }
+
+    public void visit(TyChar t) { }
+    public void visit(CharLit e) {
         stk.push(e.getValue());
     }
 

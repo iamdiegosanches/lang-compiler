@@ -22,6 +22,10 @@ public class Env {
          return i;
      }
 
+     public HashMap<String, Object> getMap() {
+         return m;
+     }
+
      private String repeatStr(int n, String c){
          String s= "";
          for(;n>0;n--){

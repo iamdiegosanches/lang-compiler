@@ -1,0 +1,17 @@
+print 'a';        -- Deve imprimir 'a'
+print 'Z';        -- Deve imprimir 'Z'
+print '\n';       -- Deve imprimir uma nova linha
+print '\t';       -- Deve imprimir um tab
+print '\'';       -- Deve imprimir uma aspas simples
+print '\\';       -- Deve imprimir uma barra invertida
+print '\065';     -- Deve imprimir 'A' (ASCII 65 em octal)
+print '\101';     -- Deve imprimir 'A' (ASCII 65 em octal, outra forma)
+
+print 'a' == 'a'; -- Deve imprimir true
+print 'a' != 'b'; -- Deve imprimir true
+print 'X' == 'Y'; -- Deve imprimir false
+print 'X' != 'X'; -- Deve imprimir false
+
+print ' ' == '\040'; -- Deve imprimir true -- {- Isso é um comentário aninhado {- dentro de outro -} aqui mesmo! -}
+
+print 'a' == '\141'; -- Deve imprimir true (ASCII 'a' em octal)

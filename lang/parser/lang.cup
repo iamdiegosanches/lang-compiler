@@ -31,12 +31,16 @@ scan with {: return s.nextToken(); :};
 
 terminal                    PLUS, MINUS, MULT, DIV, MOD;
 terminal                    NOT;
-terminal                    LESS_THAN, EQUAL_EQUAL;
+terminal                    LESS_THAN, EQUAL_EQUAL, NOT_EQUAL;
 terminal                    OPEN_PAREN, CLOSE_PAREN;
 terminal                    OPEN_BRACE, CLOSE_BRACE;
 terminal                    SEMICOLON, PRINT, ITERATE;
 terminal                    COMMA, COLON, DOUBLE_COLON;
 terminal                    INT_TYPE, FLOAT_TYPE, BOOL_TYPE;
+terminal                    AND;
+
+terminal CHAR_TYPE;
+terminal Character CHAR;
 
 terminal Integer            INT;
 terminal Float              FLOAT;
@@ -44,7 +48,7 @@ terminal String             ID;
 terminal Boolean            TRUE,FALSE;
 
 /* Non terminals */
-non terminal Exp            expr, itcond;
+non terminal Exp            expr;
 non terminal CNode          prog, cmd, cmdList, fun, block;
 non terminal CType          btype;
 non terminal Bind           param;
@@ -57,8 +61,8 @@ non terminal ArrayList<Bind> params;
 */
 
 //precedence left OR;
-//precedence left AND;
-precedence left EQUAL_EQUAL;
+precedence left AND;
+precedence left EQUAL_EQUAL, NOT_EQUAL;
 precedence left LESS_THAN;
 
 precedence left PLUS, MINUS;
@@ -92,29 +96,29 @@ cmdList ::= cmd:x cmdList:xs              {: RESULT = new CSeq(xleft, xright, x,
        ;
 
 /*   public Loop(int l, int c, Exp e, CNode body){*/
-cmd ::=  PRINT:p expr:e SEMICOLON                              {: RESULT = new Print(pleft, pright, e); :}
-       | ITERATE:i OPEN_PAREN itcond:e CLOSE_PAREN cmd:c       {: RESULT = new Loop(ileft, iright, e, c); :}
-       ;
-
-itcond ::= ID COLON expr:e         {: RESULT = e; :}    /*Falta implementar essa parte na AST*/
-       | expr:e                    {: RESULT = e; :}
+cmd ::= block:b                                                {: RESULT = b; :}
+       | PRINT:p expr:e SEMICOLON                               {: RESULT = new Print(pleft, pright, e); :}
+       | ITERATE:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c         {: RESULT = new Loop(ileft, iright, e, c); :}
+       | ITERATE:i OPEN_PAREN ID:id COLON expr:e CLOSE_PAREN cmd:c {: RESULT = new IterateWithVar(ileft, iright, new Var(idleft, idright, id), e, c); :} // Não sei pq mas não esta funcionando
        ;
 
 btype ::= INT_TYPE:t                        {: RESULT = new TyInt(tleft, tright); :}
        |  FLOAT_TYPE:t                      {: RESULT = new TyFloat(tleft, tright); :}
        |  BOOL_TYPE:t                       {: RESULT = new TyBool(tleft, tright); :}
+       |  CHAR_TYPE:t                       {: RESULT = new TyChar(tleft, tright); :}
        ;
 
 block ::= OPEN_BRACE cmdList:e CLOSE_BRACE  {: RESULT = e; :}
        ;
 
-expr ::= expr:e1 PLUS:t expr:e2           {: RESULT = new Plus(tleft,tright,e1,e2);        :}
+expr ::= expr:e1 AND:t expr:e2            {: RESULT = new And(tleft,tright,e1,e2);         :}
+       | expr:e1 PLUS:t expr:e2           {: RESULT = new Plus(tleft,tright,e1,e2);        :}
        | expr:e1 MULT:t expr:e2           {: RESULT = new Times(tleft,tright,e1,e2);       :}
        | expr:e1 MINUS:t expr:e2          {: RESULT = new Sub(tleft,tright,e1,e2);         :}
        | expr:e1 DIV:t expr:e2            {: RESULT = new Div(tleft,tright,e1,e2);         :}
        | expr:e1 LESS_THAN:t expr:e2      {: RESULT = new LessThan(tleft,tright,e1,e2);    :}
        | expr:e1 EQUAL_EQUAL:t expr:e2    {: RESULT = new Equal(tleft,tright,e1,e2);       :}
-//       | expr:e1 NOT_EQUAL:t expr:e2      {: RESULT = new NotEqual(tleft,tright,e1,e2);    :}
+       | expr:e1 NOT_EQUAL:t expr:e2      {: RESULT = new NotEqual(tleft,tright,e1,e2);     :}
        | expr:e1 MOD:t expr:e2            {: RESULT = new Mod(tleft,tright,e1,e2);         :}
        | NOT:t expr:e                     {: RESULT = new Not(tleft, tright, e);           :}
        | MINUS:t expr:e                     {: RESULT = new UMinus(tleft, tright, e);      :}
@@ -123,6 +127,8 @@ expr ::= expr:e1 PLUS:t expr:e2           {: RESULT = new Plus(tleft,tright,e1,e
        | FLOAT:n	                     {: RESULT = new FloatLit(nleft,nright,n);        :}
        | TRUE:n	                     {: RESULT = new BoolLit(nleft,nright,n);         :}
        | FALSE:n	                     {: RESULT = new BoolLit(nleft,nright,n);         :}
+       | CHAR:c                           {: RESULT = new CharLit(cleft, cright, c); :}
+       | ID:id                            {: RESULT = new Var(idleft, idright, id); :}
        ;
 
 /*op ::= AND:

@@ -5,10 +5,9 @@ import lang.nodes.expr.*;
 import lang.nodes.command.*;
 import lang.nodes.types.*;
 import lang.nodes.*;
-import lang.nodes.LangVisitor;
 
 
-public  class SimpleVisitor extends LangVisitor{
+public class SimpleVisitor extends LangVisitor{
 
     public void visit(Program p){
          System.out.println("numero de funcoes : " + p.getFuncs().size() );
@@ -20,10 +19,12 @@ public  class SimpleVisitor extends LangVisitor{
     public void visit(CSeq d) { }
     public void visit(CAttr d) { }
     public void visit(Loop d) { }
+    public void visit(IterateWithVar d) { }
     public void visit(If d) { }
     public void visit(Return d) { }
     public void visit(Print d) { }
 
+    public void visit(And e) { }
     public void visit(BinOp e) { }
     public void visit(UnOp e) { }
     public void visit(Sub  e) { }
@@ -34,12 +35,16 @@ public  class SimpleVisitor extends LangVisitor{
     public void visit(Var e) { }
     public void visit(LessThan e) { }
     public void visit(Equal e) { }
+    public void visit(NotEqual e) { }
     public void visit(Not e) { }
     public void visit(UMinus e) { }
     public void visit(FCall e) { }
     public void visit(IntLit e) { }
     public void visit(BoolLit e) { }
     public void visit(FloatLit e) { }
+
+    public void visit(TyChar t) { }
+    public void visit(CharLit e) { }
 
     public void visit(TyBool t) { }
     public void visit(TyInt t) { }
