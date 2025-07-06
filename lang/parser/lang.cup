@@ -128,6 +128,7 @@ expr ::= expr:e1 AND:t expr:e2            {: RESULT = new And(tleft,tright,e1,e2
        | TRUE:n	                     {: RESULT = new BoolLit(nleft,nright,n);         :}
        | FALSE:n	                     {: RESULT = new BoolLit(nleft,nright,n);         :}
        | CHAR:c                           {: RESULT = new CharLit(cleft, cright, c); :}
+       | ID:id                            {: RESULT = new Var(idleft, idright, id); :}
        ;
 
 /*op ::= AND:
