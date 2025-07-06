@@ -228,6 +228,9 @@ public  class GVizVisitor extends LangVisitor{
      public void visit(BoolLit e){ subNode = gf.addNode(e.getValue()+""); }
      public void visit(FloatLit e){subNode = gf.addNode(e.getValue()+""); }
 
+     public void visit(TyChar t){ subNode = gf.addNode("TyChar"); }
+     public void visit(CharLit e){ subNode = gf.addNode("'"+e.getValue()+"'"); }
+
      public void visit(TyBool t){ subNode = gf.addNode("TyBool"); }
      public void visit(TyInt t){ subNode = gf.addNode("TyInt");}
      public void visit(TyFloat t){subNode = gf.addNode("TyFloat"); }

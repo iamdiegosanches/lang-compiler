@@ -40,6 +40,9 @@ public abstract class LangVisitor{
     public abstract void visit(BoolLit e);
     public abstract void visit(FloatLit e);
 
+    public abstract void visit(TyChar t);
+    public abstract void visit(CharLit e);
+
     public abstract void visit(TyBool t);
     public abstract void visit(TyInt t);
     public abstract void visit(TyFloat t);

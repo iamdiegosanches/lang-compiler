@@ -5,7 +5,6 @@ import lang.nodes.expr.*;
 import lang.nodes.command.*;
 import lang.nodes.types.*;
 import lang.nodes.*;
-import lang.nodes.LangVisitor;
 
 
 public class SimpleVisitor extends LangVisitor{
@@ -43,6 +42,9 @@ public class SimpleVisitor extends LangVisitor{
     public void visit(IntLit e) { }
     public void visit(BoolLit e) { }
     public void visit(FloatLit e) { }
+
+    public void visit(TyChar t) { }
+    public void visit(CharLit e) { }
 
     public void visit(TyBool t) { }
     public void visit(TyInt t) { }

@@ -16,6 +16,7 @@ public class CLTypes {
     public static final short ARR = 3;
     public static final short FUNC = 4;
     public static final short ERR = 5;
+    public static final short CHAR = 6;
 
 }
 

@@ -181,7 +181,8 @@ public class TyChecker extends LangVisitor {
         VType td = stk.pop();
         if (td.getTypeValue() == CLTypes.INT ||
             td.getTypeValue() == CLTypes.FLOAT ||
-            td.getTypeValue() == CLTypes.BOOL) {} else {
+            td.getTypeValue() == CLTypes.BOOL ||
+            td.getTypeValue() == CLTypes.CHAR) {} else {
             throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + ") Operandos incompatíveis");
         }
 
@@ -317,7 +318,7 @@ public class TyChecker extends LangVisitor {
             switch (te.getTypeValue()) {
                 case CLTypes.INT:
                 case CLTypes.FLOAT:
-                //case CLTypes.CHAR:
+                case CLTypes.CHAR:
                 case CLTypes.BOOL:
                     
                     stk.push(VTyBool.newBool());
@@ -347,6 +348,7 @@ public class TyChecker extends LangVisitor {
                 case CLTypes.INT:
                 case CLTypes.FLOAT:
                 case CLTypes.BOOL:
+                case CLTypes.CHAR:
                     
                     stk.push(VTyBool.newBool());
                     break;
@@ -432,6 +434,9 @@ public class TyChecker extends LangVisitor {
     public void visit(TyFloat t) {
         stk.push(VTyFloat.newFloat());
     }
+    
+    public void visit(TyChar t) { stk.push(VTyChar.newChar()); }
+    public void visit(CharLit e) { stk.push(VTyChar.newChar()); } 
 
     public static void printEnv(Hashtable < String, VType > t) {
         for (java.util.Map.Entry < String, VType > ent: t.entrySet()) {

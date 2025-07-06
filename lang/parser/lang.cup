@@ -39,6 +39,9 @@ terminal                    COMMA, COLON, DOUBLE_COLON;
 terminal                    INT_TYPE, FLOAT_TYPE, BOOL_TYPE;
 terminal                    AND;
 
+terminal CHAR_TYPE;
+terminal Character CHAR;
+
 terminal Integer            INT;
 terminal Float              FLOAT;
 terminal String             ID;
@@ -102,6 +105,7 @@ cmd ::= block:b                                                {: RESULT = b; :}
 btype ::= INT_TYPE:t                        {: RESULT = new TyInt(tleft, tright); :}
        |  FLOAT_TYPE:t                      {: RESULT = new TyFloat(tleft, tright); :}
        |  BOOL_TYPE:t                       {: RESULT = new TyBool(tleft, tright); :}
+       |  CHAR_TYPE:t                       {: RESULT = new TyChar(tleft, tright); :}
        ;
 
 block ::= OPEN_BRACE cmdList:e CLOSE_BRACE  {: RESULT = e; :}
@@ -123,6 +127,7 @@ expr ::= expr:e1 AND:t expr:e2            {: RESULT = new And(tleft,tright,e1,e2
        | FLOAT:n	                     {: RESULT = new FloatLit(nleft,nright,n);        :}
        | TRUE:n	                     {: RESULT = new BoolLit(nleft,nright,n);         :}
        | FALSE:n	                     {: RESULT = new BoolLit(nleft,nright,n);         :}
+       | CHAR:c                           {: RESULT = new CharLit(cleft, cright, c); :}
        ;
 
 /*op ::= AND:

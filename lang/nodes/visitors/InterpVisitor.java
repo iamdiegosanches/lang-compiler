@@ -372,6 +372,11 @@ public class InterpVisitor extends LangVisitor {
         stk.push(e.getValue());
     }
 
+    public void visit(TyChar t) { }
+    public void visit(CharLit e) {
+        stk.push(e.getValue());
+    }
+
     public void visit(TyBool t) {}
     public void visit(TyInt t) {}
     public void visit(TyFloat t) {}

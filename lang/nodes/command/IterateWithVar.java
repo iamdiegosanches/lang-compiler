@@ -30,6 +30,10 @@ public class IterateWithVar extends CNode {
         return body;
     }
 
+    public void setBody(CNode body) {
+        this.body = body;
+    }
+
     @Override
     public void accept(LangVisitor v) {
         v.visit(this);
