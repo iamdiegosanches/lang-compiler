@@ -1,4 +1,5 @@
-main() {
-    print 75;
-    print 1 + 1;
+Int val = 1000;
+
+if (val < 500) {
+    print true;
 }

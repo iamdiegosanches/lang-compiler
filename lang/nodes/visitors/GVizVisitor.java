@@ -70,6 +70,15 @@ public  class GVizVisitor extends LangVisitor{
                subNode=  root;
      }
 
+     public void visit(CDecl d){
+               int root = gf.addNode("Decl");
+               d.getVar().accept(this);
+               gf.addEdge(root, subNode);
+               d.getExp().accept(this);
+               gf.addEdge(root,subNode);
+               subNode=  root;
+     }
+
      public void visit(Loop d){
                int root = gf.addNode("Loop");
                d.getCond().accept(this);

@@ -1,8 +1,6 @@
 package lang.nodes.expr;
 
 
-import lang.nodes.dotutils.DotFile;
-import lang.nodes.environment.Env;
 import lang.nodes.LangVisitor;
 
 public class FloatLit extends Exp{

@@ -18,6 +18,7 @@ public class SimpleVisitor extends LangVisitor{
 
     public void visit(CSeq d) { }
     public void visit(CAttr d) { }
+    public void visit(CDecl d) { }
     public void visit(Loop d) { }
     public void visit(IterateWithVar d) { }
     public void visit(If d) { }

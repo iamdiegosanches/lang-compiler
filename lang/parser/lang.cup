@@ -30,14 +30,14 @@ scan with {: return s.nextToken(); :};
 */
 
 terminal                    PLUS, MINUS, MULT, DIV, MOD;
-terminal                    NOT;
-terminal                    LESS_THAN, EQUAL_EQUAL, NOT_EQUAL;
+terminal                    NOT, AND;
+terminal                    LESS_THAN, EQUAL_EQUAL, ASSIGN, NOT_EQUAL;
 terminal                    OPEN_PAREN, CLOSE_PAREN;
 terminal                    OPEN_BRACE, CLOSE_BRACE;
 terminal                    SEMICOLON, PRINT, ITERATE;
 terminal                    COMMA, COLON, DOUBLE_COLON;
 terminal                    INT_TYPE, FLOAT_TYPE, BOOL_TYPE;
-terminal                    AND;
+terminal                    IF, ELSE;
 
 terminal CHAR_TYPE;
 terminal Character CHAR;
@@ -60,6 +60,7 @@ non terminal ArrayList<Bind> params;
   prioridade.
 */
 
+precedence left SEMICOLON;
 //precedence left OR;
 precedence left AND;
 precedence left EQUAL_EQUAL, NOT_EQUAL;
@@ -69,8 +70,9 @@ precedence left PLUS, MINUS;
 precedence left MULT, MOD, DIV;
 
 precedence right NOT;
-// precedence right UMINUS;
 precedence left CLOSE_PAREN; 
+
+precedence nonassoc ELSE;
 
 /* The grammar rules */
 
@@ -91,15 +93,19 @@ param ::= ID:id DOUBLE_COLON btype:t
        {: RESULT = new Bind(idleft, idright, t, new Var(idleft, idright, id)); :}
        ;
 
-cmdList ::= cmd:x cmdList:xs              {: RESULT = new CSeq(xleft, xright, x, xs); :}
-       |    cmd:x                         {: RESULT = x; :}
+cmdList ::= cmd:c                         {: RESULT = c; :}
+       |    cmdList:cl cmd:c              {: RESULT = new CSeq(clleft, clright, cl, c); :}
        ;
 
 /*   public Loop(int l, int c, Exp e, CNode body){*/
-cmd ::= block:b                                                {: RESULT = b; :}
-       | PRINT:p expr:e SEMICOLON                               {: RESULT = new Print(pleft, pright, e); :}
-       | ITERATE:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c         {: RESULT = new Loop(ileft, iright, e, c); :}
-       | ITERATE:i OPEN_PAREN ID:id COLON expr:e CLOSE_PAREN cmd:c {: RESULT = new IterateWithVar(ileft, iright, new Var(idleft, idright, id), e, c); :} // Não sei pq mas não esta funcionando
+cmd ::= block:b                                                       {: RESULT = b; :}   
+       | ID:id ASSIGN expr:e SEMICOLON                                {: RESULT = new CAttr(idleft, idright, new Var(idleft, idright, id), e); :}
+       | btype:t ID:id ASSIGN expr:e SEMICOLON                        {: RESULT = new CDecl(tleft, tright, t, new Var(idleft, idright, id), e); :}
+       | PRINT:p expr:e SEMICOLON                                     {: RESULT = new Print(pleft, pright, e); :}
+       | ITERATE:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c                {: RESULT = new Loop(ileft, iright, e, c); :}
+       | ITERATE:i OPEN_PAREN ID:id COLON expr:e CLOSE_PAREN cmd:c    {: RESULT = new IterateWithVar(ileft, iright, new Var(idleft, idright, id), e, c); :} /* Não sei pq mas não esta funcionando */
+       | IF:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c1                    {: RESULT = new If(ileft, iright, e, c1, null); :}
+       | IF:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c1 ELSE cmd:c2        {: RESULT = new If(ileft, iright, e, c1, c2); :}
        ;
 
 btype ::= INT_TYPE:t                        {: RESULT = new TyInt(tleft, tright); :}
@@ -118,17 +124,17 @@ expr ::= expr:e1 AND:t expr:e2            {: RESULT = new And(tleft,tright,e1,e2
        | expr:e1 DIV:t expr:e2            {: RESULT = new Div(tleft,tright,e1,e2);         :}
        | expr:e1 LESS_THAN:t expr:e2      {: RESULT = new LessThan(tleft,tright,e1,e2);    :}
        | expr:e1 EQUAL_EQUAL:t expr:e2    {: RESULT = new Equal(tleft,tright,e1,e2);       :}
-       | expr:e1 NOT_EQUAL:t expr:e2      {: RESULT = new NotEqual(tleft,tright,e1,e2);     :}
+       | expr:e1 NOT_EQUAL:t expr:e2      {: RESULT = new NotEqual(tleft,tright,e1,e2);    :}
        | expr:e1 MOD:t expr:e2            {: RESULT = new Mod(tleft,tright,e1,e2);         :}
        | NOT:t expr:e                     {: RESULT = new Not(tleft, tright, e);           :}
-       | MINUS:t expr:e                     {: RESULT = new UMinus(tleft, tright, e);      :}
-       | OPEN_PAREN expr:e CLOSE_PAREN      {: RESULT = e;                                   :}
-       | INT:n	                       {: RESULT = new IntLit(nleft,nright,n);          :}
+       | MINUS:t expr:e                   {: RESULT = new UMinus(tleft, tright, e);        :}
+       | OPEN_PAREN expr:e CLOSE_PAREN    {: RESULT = e;                                   :}
+       | INT:n	                     {: RESULT = new IntLit(nleft,nright,n);          :}
        | FLOAT:n	                     {: RESULT = new FloatLit(nleft,nright,n);        :}
        | TRUE:n	                     {: RESULT = new BoolLit(nleft,nright,n);         :}
        | FALSE:n	                     {: RESULT = new BoolLit(nleft,nright,n);         :}
-       | CHAR:c                           {: RESULT = new CharLit(cleft, cright, c); :}
-       | ID:id                            {: RESULT = new Var(idleft, idright, id); :}
+       | CHAR:c                           {: RESULT = new CharLit(cleft, cright, c);       :}
+       | ID:id                            {: RESULT = new Var(idleft, idright, id);        :}
        ;
 
 /*op ::= AND:

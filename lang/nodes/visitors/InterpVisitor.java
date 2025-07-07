@@ -7,13 +7,15 @@ import lang.nodes.types.*;
 import lang.nodes.*;
 import lang.nodes.dotutils.DotFile;
 import lang.nodes.environment.Env;
+
+// import lang.nodes.environment.Env;
 import java.util.Stack;
 import java.util.Hashtable;
 import java.util.ArrayList;
 
 public class InterpVisitor extends LangVisitor {
 
-    private Env env;
+    private Stack<Hashtable<String, Object>> env;
 
     private Stack < Object > stk;
     private Hashtable < String, FunDef > fn;
@@ -23,13 +25,37 @@ public class InterpVisitor extends LangVisitor {
         stk = new Stack < Object > ();
         fn = new Hashtable < String, FunDef > ();
         retMode = false;
-        env = new Env();
+        env = new Stack<>();
+        env.push(new Hashtable<String, Object>()); // Escopo global
+    }
+
+    private void enterScope() {
+        env.push(new Hashtable<String, Object>());
+    }
+
+    private void leaveScope() {
+        env.pop();
+    }
+
+    private void store(String name, Object value) {
+        env.peek().put(name, value);
+    }
+
+    private Object read(String name) {
+        for (int i = env.size() - 1; i >= 0; i--) {
+            Hashtable<String, Object> scope = env.get(i);
+            if (scope.containsKey(name)) {
+                return scope.get(name);
+            }
+        }
+        return null; // Não encontrado
     }
 
     public void printEnv() {
-        env.dumpTable();
+        System.out.println(env);
     }
 
+    // visit(Program p) e visit(FunDef d) precisam ser adaptadas para o escopo de função
     public void visit(Program p) {
         FunDef start = null;
         for (FunDef f: p.getFuncs()) {
@@ -50,7 +76,7 @@ public class InterpVisitor extends LangVisitor {
     }
 
     public void visit(Bind d) {
-        // Nção precisamos fazer nada aqui,
+        // Não precisamos fazer nada aqui,
         // O Fcall já toma as providências necessárias !
     }
 
@@ -66,7 +92,27 @@ public class InterpVisitor extends LangVisitor {
     public void visit(CAttr d) {
         if (!retMode) {
             d.getExp().accept(this);
-            env.store(d.getVar().getName(), stk.pop());
+            String varName = d.getVar().getName();
+            Object value = stk.pop();
+            boolean found = false;
+            for (int i = env.size() - 1; i >= 0; i--) {
+                if (env.get(i).containsKey(varName)) {
+                    env.get(i).put(varName, value);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                 throw new RuntimeException("Erro em CAttr: Variável '" + varName + "' não encontrada para atribuição.");
+            }
+        }
+    }
+
+    public void visit(CDecl d) {
+        if (!retMode) {
+            d.getExp().accept(this);
+            Object value = stk.pop();
+            store(d.getVar().getName(), value);
         }
     }
 
@@ -77,13 +123,19 @@ public class InterpVisitor extends LangVisitor {
             if (!(loopLimit instanceof Integer)) {
                 throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Condição do 'iterate' simples deve ser um inteiro.");
             }
+            
             int count = (Integer) loopLimit;
-            while (count > 0) {
-                d.getBody().accept(this);
-                if (retMode) {
-                    return;
+            
+            if (count > 0) {
+                enterScope(); 
+                while (count > 0) {
+                    d.getBody().accept(this);
+                    if (retMode) {
+                        break; 
+                    }
+                    count--;
                 }
-                count--;
+                leaveScope();
             }
         }
     }
@@ -93,34 +145,25 @@ public class InterpVisitor extends LangVisitor {
             d.getCondExp().accept(this);
             Object iterSource = stk.pop();
             String varName = d.getIterVar().getName();
-
-            // Cria um NOVO ambiente para o escopo do loop.
-            // Variáveis do ambiente pai são copiadas.
-            Env oldEnv = env;
-            env = new Env();
-            if (oldEnv != null) {
-                 for (java.util.Map.Entry<String, Object> entry : oldEnv.getMap().entrySet()) {
-                     if (!entry.getKey().equals(varName)) {
-                         env.store(entry.getKey(), entry.getValue());
-                     }
-                 }
+            
+            if (!(iterSource instanceof Integer)) {
+                throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Expressão de iteração para 'iterate' com variável deve ser um inteiro.");
             }
-
-
-            if (iterSource instanceof Integer) {
-                int count = (Integer) iterSource;
+            
+            int count = (Integer) iterSource;
+            
+            if (count > 0) {
+                enterScope();
+                
                 for (int i = 0; i < count; i++) {
-                    env.store(varName, count - i);
+                    store(varName, count - i); 
                     d.getBody().accept(this);
                     if (retMode) {
                         break;
                     }
                 }
+                leaveScope();
             }
-            else {
-                throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Expressão de iteração para 'iterate' com variável deve ser um inteiro (ou um array, futuramente).");
-            }
-            env = oldEnv;
         }
     }
 
@@ -128,10 +171,14 @@ public class InterpVisitor extends LangVisitor {
         if (!retMode) {
             d.getCond().accept(this);
             if ((boolean) stk.pop()) {
+                enterScope();
                 d.getThn().accept(this);
+                leaveScope();
             } else {
                 if (d.getEls() != null) {
+                    enterScope();
                     d.getEls().accept(this);
+                    leaveScope();
                 }
             }
         }
@@ -335,31 +382,31 @@ public class InterpVisitor extends LangVisitor {
     }
 
     public void visit(Var e) {
-        Object val = env.read(e.getName());
+        Object val = read(e.getName());
         if (val != null) {
             stk.push(val);
         } else {
-            throw new RuntimeException("Variáve não declarada " + e.getLine() + ", " + e.getCol() + " : " + e.getName());
+            throw new RuntimeException("Variável não declarada " + e.getLine() + ", " + e.getCol() + " : " + e.getName());
         }
     }
 
     public void visit(FCall e) {
-        FunDef called = fn.get(e.getID());
-        if (called != null) {
-            for (int j = e.getArgs().size() - 1; j >= 0; j--) {
-                e.getArgs().get(j).accept(this);
-            }
-            Env env1 = env;
-            env = new Env();
-            for (Bind b: called.getParams()) {
-                env.store(b.getVar().getName(), stk.pop());
-            }
-            called.accept(this);
-            retMode = false;
-            env = env1;
-        } else {
-            throw new RuntimeException("Chamada a função não delcarada em " + e.getLine() + ", " + e.getCol() + " : " + e.getID());
-        }
+        // FunDef called = fn.get(e.getID());
+        // if (called != null) {
+        //     for (int j = e.getArgs().size() - 1; j >= 0; j--) {
+        //         e.getArgs().get(j).accept(this);
+        //     }
+        //     Env env1 = env;
+        //     env = new Env();
+        //     for (Bind b: called.getParams()) {
+        //         env.store(b.getVar().getName(), stk.pop());
+        //     }
+        //     called.accept(this);
+        //     retMode = false;
+        //     env = env1;
+        // } else {
+        //     throw new RuntimeException("Chamada a função não delcarada em " + e.getLine() + ", " + e.getCol() + " : " + e.getID());
+        // }
     }
 
     public void visit(IntLit e) {

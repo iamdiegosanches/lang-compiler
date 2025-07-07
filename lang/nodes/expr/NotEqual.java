@@ -1,4 +1,5 @@
 package lang.nodes.expr;
+
 import lang.nodes.LangVisitor;
 
 public class NotEqual extends BinOp {

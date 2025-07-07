@@ -1,3 +1,8 @@
-iterate (3) {
-        print 10;
+print 200;
+iterate (j : 5) {
+    if (j % 2 == 0) {
+        print j;
+    } else {
+        -- aaaaaa
+    }
 }

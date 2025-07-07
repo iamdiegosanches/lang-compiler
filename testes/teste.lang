@@ -1,2 +1,102 @@
-print -(1+1*2);
+-- -----------------------------------------------------------------
+-- DCC045 - Compiladores - Suíte de Testes de Integração (Corrigida)
+-- -----------------------------------------------------------------
+-- Este arquivo testa a integração de variáveis, escopos,
+-- condicionais (if/else) e laços (iterate) com a sintaxe de
+-- comentário correta da linguagem lang.
+-- -----------------------------------------------------------------
 
+-- --- Seção 1: Testes básicos de variáveis e tipos ---
+
+print true;  -- Teste de print com literal Bool
+Int x = 10;
+print x;     -- Teste de declaração e print de Int
+
+x = x + 5;
+print x;     -- Teste de atribuição e operação
+
+{- 
+   Este é um bloco de comentário
+   de múltiplas linhas, como definido na especificação.
+   A declaração de 'y' abaixo é válida.
+-}
+Bool y = false;
+print y;     -- Teste de variável Bool
+
+
+-- --- Seção 2: Teste de `if-else` com `iterate` aninhado ---
+
+Int seletor = 2;
+
+if (seletor == 1) {
+    print -1; -- Não deve imprimir isto
+} else {
+    -- Este bloco deve ser executado
+    print 100;
+    iterate(i : 3) {
+        print i;
+    }
+}
+
+
+-- --- Seção 3: Teste de `iterate` com `if-else` aninhado ---
+
+print 200;
+iterate (j : 5) {
+    -- Este laço vai de 5 a 1
+    if (j % 2 == 0) {
+        -- Testa se o contador do laço é par
+        print j;
+    } else {
+        print false;
+    }
+}
+
+print 300;
+Int val = 1000;
+print val; -- Deve imprimir o valor do escopo mais externo
+
+if (500 < val) {
+    print val; -- Deve imprimir 1000, lendo do escopo externo
+    
+    val = 2000; -- SOMBREAMENTO: Declara uma nova variável 'val' local
+    print val; -- Deve imprimir 2000, o valor local
+    
+    iterate (k : 2) {
+        print val; -- Deve imprimir 2000, lendo do escopo do 'if'
+        val = k + 3000; -- SOMBREAMENTO aninhado
+        print val; -- Deve imprimir 3002 e depois 3001
+    }
+    
+    print val; -- O escopo do iterate terminou, deve imprimir 2000 de novo
+}
+
+print val; -- O escopo do if terminou, deve imprimir 1000 de novo
+
+
+-- --- Fim dos testes de sucesso ---
+print 999; -- Marcador de fim
+
+-- Saída Esperada para os testes de sucesso (na ordem):
+-- true
+-- 10
+-- 15
+-- false
+-- 100
+-- 3
+-- 2
+-- 1
+-- 200
+-- 4
+-- 2
+-- 300
+-- 1000
+-- 1000
+-- 2000
+-- 2000
+-- 3002
+-- 2000
+-- 3001
+-- 2000
+-- 1000
+-- 999

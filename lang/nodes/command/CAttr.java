@@ -1,7 +1,5 @@
 package lang.nodes.command;
 
-import lang.nodes.dotutils.DotFile;
-import lang.nodes.environment.Env;
 import lang.nodes.CNode;
 import lang.nodes.expr.Exp;
 import lang.nodes.expr.Var;

@@ -3,9 +3,9 @@ iterate (3) {
 }
 
 {-
-    {-
+    
     Teste comentário
-    -}
+    
 -}
 
 -- Teste comentário
