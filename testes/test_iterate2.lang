@@ -1,0 +1,7 @@
+Bool x = true;
+if (x) {
+        iterate (i : 3) {
+                Int a = 0;
+                print i;
+        }
+}

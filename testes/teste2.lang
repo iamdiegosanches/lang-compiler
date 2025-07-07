@@ -1,1 +1,5 @@
-print z;
+Int val = 1000;
+
+if (val < 500) {
+    print true;
+}

@@ -19,6 +19,8 @@ import java_cup.runtime.Symbol;
 
 %unicode
 
+%state Comment
+
 %eofval{
    return new Symbol(LangParserSym.EOF, yyline + 1, yycolumn + 1);
 %eofval}
@@ -42,18 +44,42 @@ import java_cup.runtime.Symbol;
         }
         return 0;
     }
+    
+    private char escapeToChar(String s) {
+        switch (s.charAt(2)) {
+            case 'n': return '\n';
+            case 't': return '\t';
+            case 'b': return '\b';
+            case 'r': return '\r';
+            case '\'': return '\'';
+            case '\\': return '\\';
+            default: throw new Error("Caractere de escape inválido: " + s);
+        }
+    }
+
+    private char ascIIToChar(String s) {
+        String octalValue = s.substring(2, s.length() - 1);
+        try {
+            int decimal = Integer.parseInt(octalValue, 8);
+            return (char) decimal;
+        } catch (NumberFormatException e) {
+            throw new Error("Erro ao converter o valor octal '" + s + "' em um caractere ASCII.");
+        } 
+    }
+
+    private int commentLevel = 0;
 %}
 
 ID    = [a-z][a-zA-Z0-9_]*
 TYID  = [A-Z][a-zA-Z0-9_]*
 INT   = [0-9]+
 FLOAT = (([0-9]+\.[0-9]+)|(\.[0-9]+))
-CHAR  = \'([^\\'\n\r]|\\[nrt'\\]|\\[0-9]{3})\'
+CHAR  = \'([^\\'\n\r]|\\[nrtb'\\]|\\[0-9]{3})\' 
 
 %%
 <YYINITIAL>{
     "Int"       { return new Symbol(LangParserSym.INT_TYPE, yyline + 1, yycolumn + 1); }
-//    "Char"      { return new Symbol(LangParserSym.CHAR_TYPE, yyline + 1, yycolumn + 1); }
+    "Char"      { return new Symbol(LangParserSym.CHAR_TYPE, yyline + 1, yycolumn + 1); }
     "Bool"      { return new Symbol(LangParserSym.BOOL_TYPE, yyline + 1, yycolumn + 1); }
     "Float"     { return new Symbol(LangParserSym.FLOAT_TYPE, yyline + 1, yycolumn + 1); }
     "true"      { return new Symbol(LangParserSym.TRUE, yyline + 1, yycolumn + 1, true); }
@@ -71,8 +97,8 @@ CHAR  = \'([^\\'\n\r]|\\[nrt'\\]|\\[0-9]{3})\'
 //    "null"      { return new Symbol(LangParserSym.NULL, yyline + 1, yycolumn + 1); }
 
     "=="        { return new Symbol(LangParserSym.EQUAL_EQUAL, yyline + 1, yycolumn + 1); }
-//    "!="        { return new Symbol(LangParserSym.NOT_EQUAL, yyline + 1, yycolumn + 1); }
-//    "&&"        { return new Symbol(LangParserSym.AND, yyline + 1, yycolumn + 1); }
+    "!="        { return new Symbol(LangParserSym.NOT_EQUAL, yyline + 1, yycolumn + 1); }
+    "&&"        { return new Symbol(LangParserSym.AND, yyline + 1, yycolumn + 1); }
     "::"        { return new Symbol(LangParserSym.DOUBLE_COLON, yyline + 1, yycolumn + 1); }
     ":"         { return new Symbol(LangParserSym.COLON, yyline + 1, yycolumn + 1); }
     ";"         { return new Symbol(LangParserSym.SEMICOLON, yyline + 1, yycolumn + 1); }
@@ -96,14 +122,44 @@ CHAR  = \'([^\\'\n\r]|\\[nrt'\\]|\\[0-9]{3})\'
 
     {INT}       { return new Symbol(LangParserSym.INT, yyline + 1, yycolumn + 1, str2int(yytext())); }
     {FLOAT}     { return new Symbol(LangParserSym.FLOAT, yyline + 1, yycolumn + 1, str2float(yytext())); }
-//    {CHAR}      { return new Symbol(LangParserSym.CHAR, yyline + 1, yycolumn + 1, yytext()); }
+    {CHAR}  {
+        char charValue;
+        String text = yytext();
+
+        if (text.length() == 3) {
+            charValue = text.charAt(1);
+        } else if (text.charAt(1) == '\\') {
+            if (text.charAt(2) >= '0' && text.charAt(2) <= '9') {
+                charValue = ascIIToChar(text);
+            } else {
+                charValue = escapeToChar(text);
+            }
+        } else {
+            throw new RuntimeException("Literal de caractere inválido: " + text + " na linha " + (yyline + 1) + " coluna " + (yycolumn + 1));
+        }
+        return new Symbol(LangParserSym.CHAR, yyline + 1, yycolumn + 1, charValue);
+    }
+
 
     {ID}        { return new Symbol(LangParserSym.ID, yyline + 1, yycolumn + 1, yytext()); }
 //    {TYID}      { return new Symbol(LangParserSym.TYID, yyline + 1, yycolumn + 1, yytext()); }
 
     "--".* { /* ignora */ }
-    "{-" [^]* "}-" { /* Ignora */ } 
-    [ \t\n\r\f]+           { /* ignora */ }
+    "{-" { commentLevel = 1; yybegin(Comment); } // NOVO: Início de comentário aninhado
+    [ \t\n\rz]+    { /*  */ }
 
     .                      { throw new RuntimeException("Token inesperado: \"" + yytext() + "\" na linha " + (yyline+1) + " coluna " + (yycolumn+1)); }
+}
+
+<Comment>{
+    "{-" { commentLevel++; }
+    "-}" {
+        if (commentLevel == 1) {
+            commentLevel = 0;
+            yybegin(YYINITIAL);
+        } else {
+            commentLevel--;
+        }
+    }
+    [^] { }
 }

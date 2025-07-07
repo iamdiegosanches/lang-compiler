@@ -172,10 +172,9 @@ public class TyChecker extends LangVisitor {
     
 
     public void visit(Loop d) {
-
         d.getCond().accept(this);
         VType tyc = stk.pop();
-        if (!(tyc.getTypeValue() == CLTypes.BOOL)) {
+        if (!(tyc.getTypeValue() == CLTypes.INT)) {
             throw new RuntimeException(
                 "Erro de tipo (" + d.getLine() + ", " +
                 d.getCol() +
@@ -183,8 +182,30 @@ public class TyChecker extends LangVisitor {
             );
 
         }
+        enterScope();
         d.getBody().accept(this);
+        leaveScope();
     }
+
+    public void visit(IterateWithVar d) {
+        d.getCondExp().accept(this);
+        VType condType = stk.pop();
+
+        if (condType.getTypeValue() != CLTypes.INT) {
+            // Futuramente, poderia aceitar arrays aqui
+            throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + "): Expressão do 'iterate' com variável deve ser um inteiro.");
+        }
+
+        enterScope();
+        
+        String varName = d.getIterVar().getName();
+        declareVar(varName, VTyInt.newInt(), d.getLine(), d.getCol());
+        
+        d.getBody().accept(this);
+        
+        leaveScope();
+    }
+
 
     public void visit(If d) {
         d.getCond().accept(this);
@@ -215,10 +236,28 @@ public class TyChecker extends LangVisitor {
         VType td = stk.pop();
         if (td.getTypeValue() == CLTypes.INT ||
             td.getTypeValue() == CLTypes.FLOAT ||
-            td.getTypeValue() == CLTypes.BOOL) {} else {
+            td.getTypeValue() == CLTypes.BOOL ||
+            td.getTypeValue() == CLTypes.CHAR) {} else {
             throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + ") Operandos incompatíveis");
         }
 
+    }
+
+    public void visit(And e){
+        e.getLeft().accept(this);
+        e.getRight().accept(this);
+
+        VType rightType = stk.pop();
+        VType leftType = stk.pop();
+
+        if (leftType.getTypeValue() == CLTypes.BOOL && rightType.getTypeValue() == CLTypes.BOOL) {
+            stk.push(VTyBool.newBool());
+        } else {
+            throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + 
+                                       "): Operador '&&' espera operandos do tipo 'Bool'.\n" +
+                                       "\t- Operando da esquerda é do tipo '" + leftType.toString() + "'.\n" +
+                                       "\t- Operando da direita é do tipo '" + rightType.toString() + "'.");
+        }
     }
 
     public void visit(BinOp e) {}
@@ -309,16 +348,21 @@ public class TyChecker extends LangVisitor {
     public void visit(LessThan e) {
         e.getLeft().accept(this);
         e.getRight().accept(this);
-        VType td = stk.pop();
-        VType te = stk.pop();
-        if (td.getTypeValue() == CLTypes.INT &&
-            te.getTypeValue() == CLTypes.INT) {
-            stk.push(VTyInt.newInt());
-        } else if (td.getTypeValue() == CLTypes.FLOAT &&
-            te.getTypeValue() == CLTypes.FLOAT) {
-            stk.push(VTyFloat.newFloat());
+        VType rightType = stk.pop();
+        VType leftType = stk.pop();
+
+        // A comparação pode ser entre Ints ou entre Floats.
+        boolean isIntComparison = leftType.match(VTyInt.newInt()) && rightType.match(VTyInt.newInt());
+        boolean isFloatComparison = leftType.match(VTyFloat.newFloat()) && rightType.match(VTyFloat.newFloat());
+
+        if (isIntComparison || isFloatComparison) {
+            // --- CORREÇÃO ---
+            // O RESULTADO de uma operação de comparação (<, ==, !=) é SEMPRE um booleano.
+            stk.push(VTyBool.newBool());
         } else {
-            throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + ") Operandos incompatíveis");
+            throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + 
+                                    "): Operador '<' espera operandos do mesmo tipo (Int ou Float), mas recebeu " + 
+                                    leftType + " e " + rightType);
         }
     }
 
@@ -334,7 +378,7 @@ public class TyChecker extends LangVisitor {
             switch (te.getTypeValue()) {
                 case CLTypes.INT:
                 case CLTypes.FLOAT:
-                //case CLTypes.CHAR:
+                case CLTypes.CHAR:
                 case CLTypes.BOOL:
                     
                     stk.push(VTyBool.newBool());
@@ -348,6 +392,35 @@ public class TyChecker extends LangVisitor {
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + 
                                        "): Tipos incompatíveis para o operador '=='.");
+        }
+    }
+
+    public void visit(NotEqual e) {
+        e.getLeft().accept(this);
+        e.getRight().accept(this);
+
+        VType td = stk.pop();
+        VType te = stk.pop();
+
+        if (te.getTypeValue() == td.getTypeValue()) {
+            
+            switch (te.getTypeValue()) {
+                case CLTypes.INT:
+                case CLTypes.FLOAT:
+                case CLTypes.BOOL:
+                case CLTypes.CHAR:
+                    
+                    stk.push(VTyBool.newBool());
+                    break;
+                    
+                default:
+                    throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + 
+                                               "): Operador '!=' não pode ser aplicado a operandos do tipo " + te.getTypeValue());
+            }
+
+        } else {
+            throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + 
+                                       "): Tipos incompatíveis para o operador '!='.");
         }
     }
 
@@ -421,6 +494,9 @@ public class TyChecker extends LangVisitor {
     public void visit(TyFloat t) {
         stk.push(VTyFloat.newFloat());
     }
+    
+    public void visit(TyChar t) { stk.push(VTyChar.newChar()); }
+    public void visit(CharLit e) { stk.push(VTyChar.newChar()); } 
 
     public static void printEnv(Hashtable < String, VType > t) {
         for (java.util.Map.Entry < String, VType > ent: t.entrySet()) {

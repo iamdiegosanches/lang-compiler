@@ -5,7 +5,6 @@ import lang.nodes.expr.*;
 import lang.nodes.command.*;
 import lang.nodes.types.*;
 import lang.nodes.*;
-import lang.nodes.LangVisitor;
 import lang.nodes.dotutils.DotFile;
 
 public  class GVizVisitor extends LangVisitor{
@@ -88,6 +87,18 @@ public  class GVizVisitor extends LangVisitor{
                gf.addEdge(root,subNode);
                subNode=  root;
      }
+
+     public void visit(IterateWithVar d){
+               int root = gf.addNode("IterateWithVar");
+               d.getIterVar().accept(this);
+               gf.addEdge(root,subNode);
+               d.getCondExp().accept(this);
+               gf.addEdge(root,subNode);
+               d.getBody().accept(this);
+               gf.addEdge(root,subNode);
+               subNode=  root;
+     }
+
      public void visit(If d){
                int root = gf.addNode("If");
                d.getCond().accept(this);
@@ -110,6 +121,15 @@ public  class GVizVisitor extends LangVisitor{
      public void visit(Print d){
           int root = gf.addNode("Print");
           d.getExp().accept(this);
+          gf.addEdge(root,subNode);
+          subNode = root;
+     }
+
+     public void visit(And e) {
+          int root = gf.addNode("&&");
+          e.getLeft().accept(this);
+          gf.addEdge(root,subNode);
+          e.getRight().accept(this);
           gf.addEdge(root,subNode);
           subNode = root;
      }
@@ -177,6 +197,15 @@ public  class GVizVisitor extends LangVisitor{
           subNode = root;
      }
 
+     public void visit(NotEqual e) {
+          int root = gf.addNode("!=");
+          e.getLeft().accept(this);
+          gf.addEdge(root,subNode);
+          e.getRight().accept(this);
+          gf.addEdge(root,subNode);
+          subNode = root;
+     }
+
      public void visit(Not e) {
           int root = gf.addNode("!");
           e.getRight().accept(this);
@@ -207,6 +236,9 @@ public  class GVizVisitor extends LangVisitor{
      public void visit(IntLit e){ subNode = gf.addNode(e.getValue()+""); }
      public void visit(BoolLit e){ subNode = gf.addNode(e.getValue()+""); }
      public void visit(FloatLit e){subNode = gf.addNode(e.getValue()+""); }
+
+     public void visit(TyChar t){ subNode = gf.addNode("TyChar"); }
+     public void visit(CharLit e){ subNode = gf.addNode("'"+e.getValue()+"'"); }
 
      public void visit(TyBool t){ subNode = gf.addNode("TyBool"); }
      public void visit(TyInt t){ subNode = gf.addNode("TyInt");}

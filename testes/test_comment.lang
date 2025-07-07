@@ -1,0 +1,11 @@
+iterate (3) {
+        print 10; -- teste
+}
+
+{-
+    
+    Teste comentário
+    
+-}
+
+-- Teste comentário
