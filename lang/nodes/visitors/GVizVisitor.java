@@ -79,6 +79,11 @@ public  class GVizVisitor extends LangVisitor{
                subNode=  root;
      }
 
+     public void visit(CNull d){
+               int root = gf.addNode("Null");
+               gf.addEdge(root,subNode);
+     }
+
      public void visit(Loop d){
                int root = gf.addNode("Loop");
                d.getCond().accept(this);

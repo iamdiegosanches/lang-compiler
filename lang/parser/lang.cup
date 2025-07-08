@@ -97,7 +97,6 @@ cmdList ::= cmd:c                         {: RESULT = c; :}
        |    cmdList:cl cmd:c              {: RESULT = new CSeq(clleft, clright, cl, c); :}
        ;
 
-/*   public Loop(int l, int c, Exp e, CNode body){*/
 cmd ::= block:b                                                       {: RESULT = b; :}   
        | ID:id ASSIGN expr:e SEMICOLON                                {: RESULT = new CAttr(idleft, idright, new Var(idleft, idright, id), e); :}
        | btype:t ID:id ASSIGN expr:e SEMICOLON                        {: RESULT = new CDecl(tleft, tright, t, new Var(idleft, idright, id), e); :}
@@ -115,6 +114,7 @@ btype ::= INT_TYPE:t                        {: RESULT = new TyInt(tleft, tright)
        ;
 
 block ::= OPEN_BRACE cmdList:e CLOSE_BRACE  {: RESULT = e; :}
+       | OPEN_BRACE  CLOSE_BRACE            {: RESULT = new CNull(0, 0); :}
        ;
 
 expr ::= expr:e1 AND:t expr:e2            {: RESULT = new And(tleft,tright,e1,e2);         :}
