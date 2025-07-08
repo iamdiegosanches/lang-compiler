@@ -116,6 +116,8 @@ public class InterpVisitor extends LangVisitor {
         }
     }
 
+    public void visit(CNull d) {}
+
     public void visit(Loop d) {
         if (!retMode) {
             d.getCond().accept(this);

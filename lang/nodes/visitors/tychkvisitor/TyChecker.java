@@ -169,6 +169,10 @@ public class TyChecker extends LangVisitor {
         
         declareVar(d.getVar().getName(), varType, d.getLine(), d.getCol());
     }
+
+    public void visit(CNull d) {
+        // vazio
+    }
     
 
     public void visit(Loop d) {
