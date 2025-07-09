@@ -2,17 +2,17 @@ package lang.nodes.command;
 
 import lang.nodes.CNode;
 import lang.nodes.expr.Exp;
-import lang.nodes.expr.Var;
+import lang.nodes.expr.LValue;
 import lang.nodes.types.CType;
 import lang.nodes.LangVisitor;
 
 public class CDecl extends CNode {
 
     private CType type;
-    private Var var;
+    private LValue var;
     private Exp exp;
 
-    public CDecl(int line, int col, CType type, Var var, Exp exp) {
+    public CDecl(int line, int col, CType type, LValue var, Exp exp) {
         super(line, col);
         this.type = type;
         this.var = var;
@@ -23,7 +23,7 @@ public class CDecl extends CNode {
         return type;
     }
     
-    public Var getVar() {
+    public LValue getVar() {
         return var;
     }
 

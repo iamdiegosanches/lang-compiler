@@ -12,6 +12,7 @@ import lang.nodes.environment.Env;
 import java.util.Stack;
 import java.util.Hashtable;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class InterpVisitor extends LangVisitor {
 
@@ -20,6 +21,8 @@ public class InterpVisitor extends LangVisitor {
     private Stack < Object > stk;
     private Hashtable < String, FunDef > fn;
     private boolean retMode;
+
+    private Scanner scanner = new Scanner(System.in);
 
     public InterpVisitor() {
         stk = new Stack < Object > ();
@@ -197,6 +200,35 @@ public class InterpVisitor extends LangVisitor {
         if (!retMode) {
             d.getExp().accept(this);
             System.out.println(stk.pop().toString());
+        }
+    }
+
+    public void visit(Read d) {
+        if (!retMode) {
+            LValue lv = d.getTarget();
+
+            if (!(lv instanceof Var)) {
+                throw new RuntimeException("Erro: read só suporta variáveis simples por enquanto."); 
+            }
+
+            String varName = ((Var) lv).getName();
+
+            System.out.print(varName + " = ");
+            String input = scanner.nextLine();
+            Object value = parseInput(input);
+
+            boolean found = false;
+            for (int i = env.size() - 1; i >= 0; i--) {
+                if (env.get(i).containsKey(varName)) {
+                    env.get(i).put(varName, value);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                throw new RuntimeException("Erro em Read: Variável '" + varName + "' não encontrada.");
+            }
         }
     }
 
@@ -429,5 +461,20 @@ public class InterpVisitor extends LangVisitor {
     public void visit(TyBool t) {}
     public void visit(TyInt t) {}
     public void visit(TyFloat t) {}
+
+    private Object parseInput(String input) {
+        if (input.matches("^-?\\d+$")) {
+            return Integer.parseInt(input);
+        } else if (input.matches("^-?\\d+\\.\\d+$")) {
+            return Float.parseFloat(input);
+        } else if (input.equals("true") || input.equals("false")) {
+            return Boolean.parseBoolean(input);
+        } else if (input.length() == 1) {
+            return input.charAt(0);
+        } else {
+            throw new RuntimeException("Erro em read: Entrada inválida ou tipo não suportado.");
+        }
+    }
+
 
 }

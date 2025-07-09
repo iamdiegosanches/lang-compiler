@@ -25,6 +25,7 @@ public class SimpleVisitor extends LangVisitor{
     public void visit(If d) { }
     public void visit(Return d) { }
     public void visit(Print d) { }
+    public void visit(Read d) { }
 
     public void visit(And e) { }
     public void visit(BinOp e) { }

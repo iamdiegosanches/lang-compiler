@@ -34,7 +34,7 @@ terminal                    NOT, AND;
 terminal                    LESS_THAN, EQUAL_EQUAL, ASSIGN, NOT_EQUAL;
 terminal                    OPEN_PAREN, CLOSE_PAREN;
 terminal                    OPEN_BRACE, CLOSE_BRACE;
-terminal                    SEMICOLON, PRINT, ITERATE;
+terminal                    SEMICOLON, PRINT, ITERATE, READ;
 terminal                    COMMA, COLON, DOUBLE_COLON;
 terminal                    INT_TYPE, FLOAT_TYPE, BOOL_TYPE;
 terminal                    IF, ELSE;
@@ -51,6 +51,7 @@ terminal Boolean            TRUE,FALSE;
 non terminal Exp            expr;
 non terminal CNode          prog, cmd, cmdList, fun, block;
 non terminal CType          btype;
+non terminal LValue         lvalue;
 non terminal Bind           param;
 non terminal ArrayList<Bind> params;
 
@@ -97,14 +98,18 @@ cmdList ::= cmd:c                         {: RESULT = c; :}
        |    cmdList:cl cmd:c              {: RESULT = new CSeq(clleft, clright, cl, c); :}
        ;
 
-cmd ::= block:b                                                       {: RESULT = b; :}   
-       | ID:id ASSIGN expr:e SEMICOLON                                {: RESULT = new CAttr(idleft, idright, new Var(idleft, idright, id), e); :}
-       | btype:t ID:id ASSIGN expr:e SEMICOLON                        {: RESULT = new CDecl(tleft, tright, t, new Var(idleft, idright, id), e); :}
-       | PRINT:p expr:e SEMICOLON                                     {: RESULT = new Print(pleft, pright, e); :}
-       | ITERATE:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c                {: RESULT = new Loop(ileft, iright, e, c); :}
-       | ITERATE:i OPEN_PAREN ID:id COLON expr:e CLOSE_PAREN cmd:c    {: RESULT = new IterateWithVar(ileft, iright, new Var(idleft, idright, id), e, c); :} /* Não sei pq mas não esta funcionando */
-       | IF:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c1                    {: RESULT = new If(ileft, iright, e, c1, null); :}
-       | IF:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c1 ELSE cmd:c2        {: RESULT = new If(ileft, iright, e, c1, c2); :}
+cmd ::= block:b                                                              {: RESULT = b; :}   
+       | lvalue:id ASSIGN expr:e SEMICOLON                                   {: RESULT = new CAttr(idleft, idright, id, e); :}
+       | btype:t lvalue:id ASSIGN expr:e SEMICOLON                           {: RESULT = new CDecl(tleft, tright, t, id, e); :}
+       | PRINT:p expr:e SEMICOLON                                            {: RESULT = new Print(pleft, pright, e); :}
+       | ITERATE:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c                       {: RESULT = new Loop(ileft, iright, e, c); :}
+       | ITERATE:i OPEN_PAREN lvalue:id COLON expr:e CLOSE_PAREN cmd:c       {: RESULT = new IterateWithVar(ileft, iright, id, e, c); :} /* Não sei pq mas não esta funcionando */
+       | IF:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c1                           {: RESULT = new If(ileft, iright, e, c1, null); :}
+       | IF:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c1 ELSE cmd:c2               {: RESULT = new If(ileft, iright, e, c1, c2); :}
+       | READ:r lvalue:lv SEMICOLON                                          {: RESULT = new Read(rleft, rright, lv); :}
+       ;
+
+lvalue ::= ID:id                            {: RESULT = new Var(idleft, idright, id);        :}
        ;
 
 btype ::= INT_TYPE:t                        {: RESULT = new TyInt(tleft, tright); :}
@@ -134,7 +139,7 @@ expr ::= expr:e1 AND:t expr:e2            {: RESULT = new And(tleft,tright,e1,e2
        | TRUE:n	                     {: RESULT = new BoolLit(nleft,nright,n);         :}
        | FALSE:n	                     {: RESULT = new BoolLit(nleft,nright,n);         :}
        | CHAR:c                           {: RESULT = new CharLit(cleft, cright, c);       :}
-       | ID:id                            {: RESULT = new Var(idleft, idright, id);        :}
+       | lvalue:id                        {: RESULT = (Exp)id;                                  :}
        ;
 
 /*op ::= AND:
