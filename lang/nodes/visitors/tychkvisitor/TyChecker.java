@@ -248,6 +248,33 @@ public class TyChecker extends LangVisitor {
 
     }
 
+    public void visit(Read d) {
+        LValue lv = d.getTarget();
+
+        if (!(lv instanceof Var)) {
+            throw new RuntimeException(
+                "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): read só suporta variáveis simples."
+            );
+        }
+
+        String varName = ((Var) lv).getName();
+
+        VType varType = findVar(varName);
+
+        if (varType == null) {
+            throw new RuntimeException(
+                "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Variável '" + varName + "' usada em read não foi declarada."
+            );
+        }
+
+        if (!(varType instanceof VTyInt || varType instanceof VTyFloat ||
+            varType instanceof VTyChar || varType instanceof VTyBool)) {
+            throw new RuntimeException(
+                "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipo de '" + varName + "' não é permitido em read."
+            );
+        }
+    }
+
     public void visit(And e){
         e.getLeft().accept(this);
         e.getRight().accept(this);

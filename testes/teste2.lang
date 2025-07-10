@@ -1,5 +1,8 @@
-Int val = 1000;
-
-iterate (val) {
-    
+Int num = 0;
+read num;
+Bool x = false;
+if (num % 2 == 0) {
+    x = true;
 }
+print x;
+

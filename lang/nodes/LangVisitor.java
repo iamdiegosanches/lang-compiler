@@ -22,6 +22,7 @@ public abstract class LangVisitor{
     public abstract void visit(If d);
     public abstract void visit(Return d);
     public abstract void visit(Print d);
+    public abstract void visit(Read d);
 
     public abstract void visit(And e);
     public abstract void visit(BinOp e);

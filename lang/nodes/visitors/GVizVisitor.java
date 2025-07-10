@@ -124,11 +124,16 @@ public  class GVizVisitor extends LangVisitor{
           gf.addEdge(root,subNode);
           subNode = root;
      }
+
      public void visit(Print d){
           int root = gf.addNode("Print");
           d.getExp().accept(this);
           gf.addEdge(root,subNode);
           subNode = root;
+     }
+
+     public void visit(Read d){
+          //
      }
 
      public void visit(And e) {

@@ -2,23 +2,24 @@ package lang.nodes.command;
 
 import lang.nodes.CNode;
 import lang.nodes.expr.Exp;
+import lang.nodes.expr.LValue;
 import lang.nodes.expr.Var;
 import lang.nodes.LangVisitor;
 
 public class IterateWithVar extends CNode {
 
-    private Var iterVar;
+    private LValue iterVar;
     private Exp condExp; // A expressão que define a iteração (int ou array)
     private CNode body;
 
-    public IterateWithVar(int l, int c, Var iterVar, Exp condExp, CNode body) {
+    public IterateWithVar(int l, int c, LValue iterVar, Exp condExp, CNode body) {
         super(l, c);
         this.iterVar = iterVar;
         this.condExp = condExp;
         this.body = body;
     }
 
-    public Var getIterVar() {
+    public LValue getIterVar() {
         return iterVar;
     }
 

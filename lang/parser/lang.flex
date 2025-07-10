@@ -90,7 +90,7 @@ CHAR  = \'([^\\'\n\r]|\\[nrtb'\\]|\\[0-9]{3})\'
     "if"        { return new Symbol(LangParserSym.IF, yyline + 1, yycolumn + 1); }
     "else"      { return new Symbol(LangParserSym.ELSE, yyline + 1, yycolumn + 1); }
 //    "return"    { return new Symbol(LangParserSym.RETURN, yyline + 1, yycolumn + 1); }
-//    "read"      { return new Symbol(LangParserSym.READ, yyline + 1, yycolumn + 1); }
+    "read"      { return new Symbol(LangParserSym.READ, yyline + 1, yycolumn + 1); }
     "print"     { return new Symbol(LangParserSym.PRINT, yyline + 1, yycolumn + 1); }
     "iterate"   { return new Symbol(LangParserSym.ITERATE, yyline + 1, yycolumn + 1); }
 //    "new"       { return new Symbol(LangParserSym.NEW, yyline + 1, yycolumn + 1); }
