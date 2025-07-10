@@ -196,7 +196,7 @@ public class InterpVisitor extends LangVisitor {
     public void visit(Print d) {
         if (!retMode) {
             d.getExp().accept(this);
-            System.out.println(stk.pop().toString());
+            System.out.println(stk.pop());
         }
     }
 
@@ -341,7 +341,20 @@ public class InterpVisitor extends LangVisitor {
         Object right = stk.pop();
         Object left = stk.pop();
 
-        stk.push(left.equals(right));
+        if (left instanceof Character && right instanceof Character) {
+            stk.push(left.equals(right));
+        } else if (left instanceof Boolean && right instanceof Boolean) {
+            stk.push(left.equals(right));
+        } else if (left instanceof Integer && right instanceof Integer) {
+            stk.push(left.equals(right));
+        } else if (left instanceof Float && right instanceof Float) {
+            stk.push(left.equals(right));
+        } else if (left == null || right == null) { 
+            stk.push(left == right); 
+        }
+        else {
+            throw new RuntimeException("Operação '==' não permitida entre os tipos " + left.getClass().getSimpleName() + " e " + right.getClass().getSimpleName() + " em " + e.getLine() + ", " + e.getCol() + ".");
+        }
     }
     
     public void visit(NotEqual e) {
@@ -351,7 +364,20 @@ public class InterpVisitor extends LangVisitor {
         Object right = stk.pop();
         Object left = stk.pop();
 
-        stk.push(!left.equals(right));
+        if (left instanceof Character && right instanceof Character) {
+            stk.push(!left.equals(right));
+        } else if (left instanceof Boolean && right instanceof Boolean) {
+            stk.push(!left.equals(right));
+        } else if (left instanceof Integer && right instanceof Integer) {
+            stk.push(!left.equals(right));
+        } else if (left instanceof Float && right instanceof Float) {
+            stk.push(!left.equals(right));
+        } else if (left == null || right == null) { 
+            stk.push(left != right); 
+        }
+        else {
+            throw new RuntimeException("Operação '!=' não permitida entre os tipos " + left.getClass().getSimpleName() + " e " + right.getClass().getSimpleName() + " em " + e.getLine() + ", " + e.getCol() + ".");
+        }
     }
 
     public void visit(Not e) {
@@ -424,6 +450,10 @@ public class InterpVisitor extends LangVisitor {
     public void visit(TyChar t) { }
     public void visit(CharLit e) {
         stk.push(e.getValue());
+    }
+
+    public void visit(NullLit e) {
+        stk.push(null);
     }
 
     public void visit(TyBool t) {}

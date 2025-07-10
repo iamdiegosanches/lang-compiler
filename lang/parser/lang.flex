@@ -94,7 +94,7 @@ CHAR  = \'([^\\'\n\r]|\\[nrtb'\\]|\\[0-9]{3})\'
     "print"     { return new Symbol(LangParserSym.PRINT, yyline + 1, yycolumn + 1); }
     "iterate"   { return new Symbol(LangParserSym.ITERATE, yyline + 1, yycolumn + 1); }
 //    "new"       { return new Symbol(LangParserSym.NEW, yyline + 1, yycolumn + 1); }
-//    "null"      { return new Symbol(LangParserSym.NULL, yyline + 1, yycolumn + 1); }
+    "null"      { return new Symbol(LangParserSym.NULL, yyline + 1, yycolumn + 1); }
 
     "=="        { return new Symbol(LangParserSym.EQUAL_EQUAL, yyline + 1, yycolumn + 1); }
     "!="        { return new Symbol(LangParserSym.NOT_EQUAL, yyline + 1, yycolumn + 1); }
@@ -145,7 +145,7 @@ CHAR  = \'([^\\'\n\r]|\\[nrtb'\\]|\\[0-9]{3})\'
 //    {TYID}      { return new Symbol(LangParserSym.TYID, yyline + 1, yycolumn + 1, yytext()); }
 
     "--".* { /* ignora */ }
-    "{-" { commentLevel = 1; yybegin(Comment); } // NOVO: Início de comentário aninhado
+    "{-" { commentLevel = 1; yybegin(Comment); }
     [ \t\n\rz]+    { /*  */ }
 
     .                      { throw new RuntimeException("Token inesperado: \"" + yytext() + "\" na linha " + (yyline+1) + " coluna " + (yycolumn+1)); }
