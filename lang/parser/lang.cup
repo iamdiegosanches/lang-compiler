@@ -42,6 +42,8 @@ terminal                    IF, ELSE;
 terminal CHAR_TYPE;
 terminal Character CHAR;
 
+terminal NULL;
+
 terminal Integer            INT;
 terminal Float              FLOAT;
 terminal String             ID;
@@ -139,7 +141,8 @@ expr ::= expr:e1 AND:t expr:e2            {: RESULT = new And(tleft,tright,e1,e2
        | TRUE:n	                     {: RESULT = new BoolLit(nleft,nright,n);         :}
        | FALSE:n	                     {: RESULT = new BoolLit(nleft,nright,n);         :}
        | CHAR:c                           {: RESULT = new CharLit(cleft, cright, c);       :}
-       | lvalue:id                        {: RESULT = (Exp)id;                                  :}
+       | lvalue:id                        {: RESULT = (Exp)id;                             :}
+       | NULL:n                           {: RESULT = new NullLit(nleft,nright);           :}
        ;
 
 /*op ::= AND:

@@ -241,7 +241,8 @@ public class TyChecker extends LangVisitor {
         if (td.getTypeValue() == CLTypes.INT ||
             td.getTypeValue() == CLTypes.FLOAT ||
             td.getTypeValue() == CLTypes.BOOL ||
-            td.getTypeValue() == CLTypes.CHAR) {} else {
+            td.getTypeValue() == CLTypes.CHAR ||
+            td.getTypeValue() == CLTypes.NULL) {} else {
             throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + ") Operandos incompatíveis");
         }
 
@@ -404,6 +405,15 @@ public class TyChecker extends LangVisitor {
         VType td = stk.pop();
         VType te = stk.pop();
 
+        if (te.getTypeValue() == CLTypes.NULL || td.getTypeValue() == CLTypes.NULL) {
+            if ((te.getTypeValue() != CLTypes.NULL && (te.getTypeValue() == CLTypes.INT || te.getTypeValue() == CLTypes.FLOAT || te.getTypeValue() == CLTypes.BOOL || te.getTypeValue() == CLTypes.CHAR)) ||
+                (td.getTypeValue() != CLTypes.NULL && (td.getTypeValue() == CLTypes.INT || td.getTypeValue() == CLTypes.FLOAT || td.getTypeValue() == CLTypes.BOOL || td.getTypeValue() == CLTypes.CHAR))) {
+                throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Null não pode ser comparado com tipos primitivos.");
+            }
+            stk.push(VTyBool.newBool()); // O resultado da comparação é sempre um booleano
+            return;
+        }
+
         if (te.getTypeValue() == td.getTypeValue()) {
             
             switch (te.getTypeValue()) {
@@ -432,6 +442,15 @@ public class TyChecker extends LangVisitor {
 
         VType td = stk.pop();
         VType te = stk.pop();
+
+        if (te.getTypeValue() == CLTypes.NULL || td.getTypeValue() == CLTypes.NULL) {
+            if ((te.getTypeValue() != CLTypes.NULL && (te.getTypeValue() == CLTypes.INT || te.getTypeValue() == CLTypes.FLOAT || te.getTypeValue() == CLTypes.BOOL || te.getTypeValue() == CLTypes.CHAR)) ||
+                (td.getTypeValue() != CLTypes.NULL && (td.getTypeValue() == CLTypes.INT || td.getTypeValue() == CLTypes.FLOAT || td.getTypeValue() == CLTypes.BOOL || td.getTypeValue() == CLTypes.CHAR))) {
+                throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Null não pode ser comparado com tipos primitivos.");
+            }
+            stk.push(VTyBool.newBool()); // O resultado da comparação é sempre um booleano
+            return;
+        }
 
         if (te.getTypeValue() == td.getTypeValue()) {
             
@@ -527,7 +546,9 @@ public class TyChecker extends LangVisitor {
     }
     
     public void visit(TyChar t) { stk.push(VTyChar.newChar()); }
-    public void visit(CharLit e) { stk.push(VTyChar.newChar()); } 
+    public void visit(CharLit e) { stk.push(VTyChar.newChar()); }
+
+    public void visit(NullLit e) { stk.push(VTyNull.newNull()); }
 
     public static void printEnv(Hashtable < String, VType > t) {
         for (java.util.Map.Entry < String, VType > ent: t.entrySet()) {

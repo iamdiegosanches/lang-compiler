@@ -80,8 +80,9 @@ public  class GVizVisitor extends LangVisitor{
      }
 
      public void visit(CNull d){
-               int root = gf.addNode("Null");
+               int root = gf.addNode("NullCommand");
                gf.addEdge(root,subNode);
+               subNode = root;
      }
 
      public void visit(Loop d){
@@ -250,6 +251,7 @@ public  class GVizVisitor extends LangVisitor{
      public void visit(TyChar t){ subNode = gf.addNode("TyChar"); }
      public void visit(CharLit e){ subNode = gf.addNode("'"+e.getValue()+"'"); }
 
+     public void visit(NullLit e){ subNode = gf.addNode("null"); }
      public void visit(TyBool t){ subNode = gf.addNode("TyBool"); }
      public void visit(TyInt t){ subNode = gf.addNode("TyInt");}
      public void visit(TyFloat t){subNode = gf.addNode("TyFloat"); }
