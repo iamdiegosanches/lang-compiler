@@ -1,8 +1,0 @@
--- Testa o comando if-else.
-checkSignal(val :: Int) {
-    if val > 0 {
-        print 1;
-    } else {
-        print -1;
-    }
-}

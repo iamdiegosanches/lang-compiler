@@ -134,26 +134,25 @@ public class TyChecker extends LangVisitor {
     }
 
     public void visit(CAttr d) {
-        String varName = d.getVar().getName();
-
-        VType varType = findVar(varName);
-
-        if (varType == null) {
-            throw new RuntimeException(
-                "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Variável '" + varName + "' não foi declarada."
-            );
-        }
-
         d.getExp().accept(this);
         VType expType = stk.pop();
 
-        if (!varType.match(expType)) {
-            throw new RuntimeException(
-                "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipos incompatíveis na atribuição para '" + varName + "'."
-            );
+        LValue lvalue = d.getVar();
+
+        String varName = ((Var) lvalue).getName();
+        VType varType = findVar(varName);
+
+        if (varType == null) {
+            declareVar(varName, expType, d.getLine(), d.getCol());
+        } else {
+            if (!varType.match(expType)) {
+                throw new RuntimeException(
+                    "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipos incompatíveis na atribuição para '" + varName + "'. Esperado '" + varType.toString() + "', encontrado '" + expType.toString() + "'."
+                );
+            }
         }
     }
-
+    
     public void visit(CDecl d) {
         d.getExp().accept(this);
         VType expType = stk.pop();
@@ -250,27 +249,13 @@ public class TyChecker extends LangVisitor {
 
     public void visit(Read d) {
         LValue lv = d.getTarget();
-
-        if (!(lv instanceof Var)) {
-            throw new RuntimeException(
-                "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): read só suporta variáveis simples."
-            );
-        }
-
-        String varName = ((Var) lv).getName();
-
-        VType varType = findVar(varName);
-
-        if (varType == null) {
-            throw new RuntimeException(
-                "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Variável '" + varName + "' usada em read não foi declarada."
-            );
-        }
+        lv.accept(this);
+        VType varType = stk.pop();
 
         if (!(varType instanceof VTyInt || varType instanceof VTyFloat ||
             varType instanceof VTyChar || varType instanceof VTyBool)) {
             throw new RuntimeException(
-                "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipo de '" + varName + "' não é permitido em read."
+                "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipo do destino da leitura ('" + varType.toString() + "') não é permitido no comando 'read'. Apenas Int, Float, Char, Bool são permitidos."
             );
         }
     }

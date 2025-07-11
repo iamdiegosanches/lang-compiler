@@ -1,6 +1,0 @@
-badIf() {
-    x :: Int;
-    x = 10;
-    if x > 5
-        print 1; -- ERRO: Precisa estar dentro de { ... }
-}

@@ -102,10 +102,10 @@ cmdList ::= cmd:c                         {: RESULT = c; :}
 
 cmd ::= block:b                                                              {: RESULT = b; :}   
        | lvalue:id ASSIGN expr:e SEMICOLON                                   {: RESULT = new CAttr(idleft, idright, id, e); :}
-       | btype:t lvalue:id ASSIGN expr:e SEMICOLON                           {: RESULT = new CDecl(tleft, tright, t, id, e); :}
+/*       | btype:t lvalue:id ASSIGN expr:e SEMICOLON                           {: RESULT = new CDecl(tleft, tright, t, id, e); :} */
        | PRINT:p expr:e SEMICOLON                                            {: RESULT = new Print(pleft, pright, e); :}
        | ITERATE:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c                       {: RESULT = new Loop(ileft, iright, e, c); :}
-       | ITERATE:i OPEN_PAREN lvalue:id COLON expr:e CLOSE_PAREN cmd:c       {: RESULT = new IterateWithVar(ileft, iright, id, e, c); :} /* Não sei pq mas não esta funcionando */
+       | ITERATE:i OPEN_PAREN lvalue:id COLON expr:e CLOSE_PAREN cmd:c       {: RESULT = new IterateWithVar(ileft, iright, id, e, c); :}
        | IF:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c1                           {: RESULT = new If(ileft, iright, e, c1, null); :}
        | IF:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c1 ELSE cmd:c2               {: RESULT = new If(ileft, iright, e, c1, c2); :}
        | READ:r lvalue:lv SEMICOLON                                          {: RESULT = new Read(rleft, rright, lv); :}

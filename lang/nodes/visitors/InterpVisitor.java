@@ -41,6 +41,13 @@ public class InterpVisitor extends LangVisitor {
     }
 
     private void store(String name, Object value) {
+        for (int i = env.size() - 1; i >= 0; i--) {
+            Hashtable<String, Object> scope = env.get(i);
+            if (scope.containsKey(name)) {
+                scope.put(name, value);
+                return;
+            }
+        }
         env.peek().put(name, value);
     }
 
@@ -93,22 +100,14 @@ public class InterpVisitor extends LangVisitor {
     }
 
     public void visit(CAttr d) {
-        if (!retMode) {
-            d.getExp().accept(this);
-            String varName = d.getVar().getName();
-            Object value = stk.pop();
-            boolean found = false;
-            for (int i = env.size() - 1; i >= 0; i--) {
-                if (env.get(i).containsKey(varName)) {
-                    env.get(i).put(varName, value);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                 throw new RuntimeException("Erro em CAttr: Variável '" + varName + "' não encontrada para atribuição.");
-            }
-        }
+        d.getExp().accept(this);
+        Object value = stk.pop();
+
+        LValue lvalue = d.getVar();
+
+        String varName = ((Var) lvalue).getName();
+        store(varName, value); 
+        
     }
 
     public void visit(CDecl d) {
@@ -199,7 +198,7 @@ public class InterpVisitor extends LangVisitor {
     public void visit(Print d) {
         if (!retMode) {
             d.getExp().accept(this);
-            System.out.println(stk.pop());
+            System.out.print(stk.pop());
         }
     }
 

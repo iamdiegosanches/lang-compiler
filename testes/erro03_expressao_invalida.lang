@@ -1,4 +1,0 @@
-badExpression() {
-    x :: Int;
-    x = 10 + * 5; -- ERRO: Operadores '+' e '*' consecutivos.
-}

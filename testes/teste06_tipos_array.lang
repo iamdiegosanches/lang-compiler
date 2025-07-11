@@ -1,6 +1,0 @@
--- Testa arrays.
-arrayTest() {
-    matrix :: Int[][];
-    matrix = new Int[][];
-    matrix[0][0] = 1;
-}

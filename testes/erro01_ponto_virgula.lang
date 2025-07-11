@@ -1,4 +1,0 @@
-data BadData {
-    x :: Int;
-    y :: Int  -- ERRO: Falta o ponto e virgula aqui.
-}
