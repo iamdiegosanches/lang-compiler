@@ -1,6 +1,6 @@
 package lang.nodes.expr;
 
-import lang.nodes.dotutils.DotFile;
+
 import lang.nodes.LangVisitor;
 
 public class IntLit extends Exp{
@@ -13,12 +13,6 @@ public class IntLit extends Exp{
 
       public int getValue(){ return value;}
 
-
-      public int toDot(DotFile d){
-         return d.addNode(""+value);
-      }
-
       public void accept(LangVisitor v){v.visit(this);}
-
 
 }

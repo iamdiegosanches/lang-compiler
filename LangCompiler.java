@@ -1,7 +1,6 @@
 
 import java.io.*;
 import java_cup.runtime.*;
-import lang.nodes.dotutils.DotFile;
 import lang.nodes.CNode;
 import lang.nodes.environment.Env;
 import lang.parser.LangParser;
