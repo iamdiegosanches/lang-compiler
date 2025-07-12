@@ -1,7 +1,7 @@
 {-
   Cuidado com a identação enganosa !
 -}
---main(){
+main(){
    x = 0;
    read x;
    if(x < 10)
@@ -10,4 +10,4 @@
    else print 'Z';
    print 'D';
    print '\n';
---}
+}

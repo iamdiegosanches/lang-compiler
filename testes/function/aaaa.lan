@@ -1,0 +1,10 @@
+divmod(num :: Int, divisor :: Int) : Int, Int {
+    q = num / divisor;
+    r = num % divisor;
+    return q, r;
+}
+
+
+main() {
+    divmod() <q, r>;
+}

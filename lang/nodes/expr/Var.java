@@ -2,7 +2,6 @@
 package lang.nodes.expr;
 
 import lang.nodes.LangVisitor;
-import lang.nodes.visitors.GVizVisitor; // Import GVizVisitor
 
 public class Var extends Exp implements LValue {
 
@@ -21,8 +20,4 @@ public class Var extends Exp implements LValue {
             v.visit(this);
       }
 
-      @Override
-      public void accept(GVizVisitor v) {
-            v.visit(this);
-      }
 }

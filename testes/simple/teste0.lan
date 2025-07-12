@@ -10,7 +10,7 @@
 --nlines  :  5
 --i  :  0
 
---main(){
+main(){
    nlines = 5;
    i = nlines;
    iterate(nlines){
@@ -18,4 +18,4 @@
      i = i - 1;
      print '\n';
    }
---}
+}
