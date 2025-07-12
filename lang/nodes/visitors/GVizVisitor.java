@@ -256,4 +256,29 @@ public  class GVizVisitor extends LangVisitor{
      public void visit(TyInt t){ subNode = gf.addNode("TyInt");}
      public void visit(TyFloat t){subNode = gf.addNode("TyFloat"); }
 
+     public void visit(NewArray e){
+          int root = gf.addNode("NewArray");
+          e.getSizeExp().accept(this);
+          gf.addEdge(root, subNode);
+          subNode = root;
+     }
+
+     public void visit(ArrayAccess e){
+          int root = gf.addNode("ArrayAccess");
+          e.getArrayVar().accept(this);
+          gf.addEdge(root, subNode);
+          e.getIndexExp().accept(this);
+          gf.addEdge(root, subNode);
+          subNode = root;
+     }
+
+     public void visit(TyArr t){
+          int root = gf.addNode("TyArr " + t.toString());
+          if (t.getElementType() != null) {
+              t.getElementType().accept(this);
+              gf.addEdge(root, subNode);
+          }
+          subNode = root;
+     }
+
 }
