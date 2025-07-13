@@ -4,6 +4,7 @@ import lang.nodes.decl.*;
 import lang.nodes.expr.*;
 import lang.nodes.command.*;
 import lang.nodes.types.*;
+import lang.nodes.visitors.tychkvisitor.VTyUndetermined;
 import lang.nodes.*;
 import lang.nodes.dotutils.DotFile;
 import lang.nodes.environment.Env;
@@ -42,6 +43,9 @@ public class InterpVisitor extends LangVisitor {
     private void store(String name, Object value) {
         for (int i = env.size() - 1; i >= 0; i--) {
             Hashtable<String, Object> scope = env.get(i);
+            if (scope == null) {
+                throw new RuntimeException("Erro interno: Escopo nulo encontrado na pilha de ambientes em índice " + i + ". Isso não deveria acontecer.");
+            }
             if (scope.containsKey(name)) {
                 scope.put(name, value);
                 return;
@@ -53,6 +57,9 @@ public class InterpVisitor extends LangVisitor {
     private Object read(String name) {
         for (int i = env.size() - 1; i >= 0; i--) {
             Hashtable<String, Object> scope = env.get(i);
+            if (scope == null) { // Verificação defensiva
+                throw new RuntimeException("Erro interno: Escopo nulo encontrado na pilha de ambientes ao ler variável.");
+            }
             if (scope.containsKey(name)) {
                 return scope.get(name);
             }
@@ -157,12 +164,11 @@ public class InterpVisitor extends LangVisitor {
             
             if (count > 0) {
                 enterScope(); 
-                while (count > 0) { // tatlvez trocar para for (int i = 0; i < count; i++)
+                for (int i = 0; i < count; i++) {
                     d.getBody().accept(this);
                     if (retMode) {
                         break; 
                     }
-                    count--;
                 }
                 leaveScope();
             }
@@ -173,26 +179,35 @@ public class InterpVisitor extends LangVisitor {
         if (!retMode) {
             d.getCondExp().accept(this);
             Object iterSource = stk.pop();
-            String varName = d.getIterVar().getName();
-            
-            if (!(iterSource instanceof Integer)) {
-                throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Expressão de iteração para 'iterate' com variável deve ser um inteiro.");
-            }
-            
-            int count = (Integer) iterSource;
-            
-            if (count > 0) {
-                enterScope();
-                
-                for (int i = 0; i < count; i++) {
-                    store(varName, count - i); 
+            String varName = ((Var) d.getIterVar()).getName(); 
+
+            enterScope();
+
+            if (iterSource instanceof Integer) {
+                int count = (Integer) iterSource;
+                if (count > 0) {
+                    for (int i = 0; i < count; i++) {
+                        store(varName, count - i);
+                        d.getBody().accept(this);
+                        if (retMode) {
+                            break;
+                        }
+                    }
+                }
+            } else if (iterSource instanceof Object[]) {
+                Object[] array = (Object[]) iterSource;
+                for (int i = 0; i < array.length; i++) {
+                    store(varName, array[i]);
                     d.getBody().accept(this);
                     if (retMode) {
                         break;
                     }
                 }
-                leaveScope();
+            } else {
+                throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Expressão de iteração para 'iterate' com variável deve ser um inteiro ou um array. Tipo encontrado: " + iterSource.getClass().getSimpleName());
             }
+            
+            leaveScope();
         }
     }
 
@@ -230,6 +245,7 @@ public class InterpVisitor extends LangVisitor {
     public void visit(Read d) {
         if (!retMode) {
             LValue lv = d.getTarget();
+            System.out.print(lv.getName() + " = ");
             String input = scanner.nextLine();
             Object value = parseInput(input);
 
@@ -237,7 +253,11 @@ public class InterpVisitor extends LangVisitor {
                 String varName = ((Var) lv).getName();
                 boolean found = false;
                 for (int i = env.size() - 1; i >= 0; i--) {
-                    if (env.get(i).containsKey(varName)) {
+                    Hashtable<String, Object> scope = env.get(i);
+                    if (scope == null) {
+                        throw new RuntimeException("Erro interno: Escopo nulo encontrado na pilha de ambientes ao ler variável.");
+                    }
+                    if (scope.containsKey(varName)) {
                         env.get(i).put(varName, value);
                         found = true;
                         break;
@@ -535,6 +555,7 @@ public class InterpVisitor extends LangVisitor {
     public void visit(TyInt t) {}
     public void visit(TyFloat t) {}
     public void visit(TyArr t) {}
+    public void visit(VTyUndetermined t) {}
 
     public void visit(NewArray e) {
         e.getSizeExp().accept(this);
@@ -558,13 +579,11 @@ public class InterpVisitor extends LangVisitor {
     }
 
     public void visit(ArrayAccess e) {
-        // Este método é chamado para avaliar um ArrayAccess.
-        e.getArrayVar().accept(this);
-        e.getIndexExp().accept(this);
-
-        // Agora, desempilhamos e fazemos a verificação de limites, e empilhamos o valor do elemento.
-        Object indexObj = stk.pop();
+        e.getArrayVar().accept(this); 
         Object arrayObj = stk.pop();
+        
+        e.getIndexExp().accept(this); 
+        Object indexObj = stk.pop();
 
         if (!(arrayObj instanceof Object[])) {
             throw new RuntimeException("Erro de execução (" + e.getLine() + ", " + e.getCol() + "): Tentativa de acesso como array em uma variável que não é um array.");

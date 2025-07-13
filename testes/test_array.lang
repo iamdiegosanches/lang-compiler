@@ -11,12 +11,17 @@ print minhaLista[2]; -- Deve imprimir 30 (10 + 20)
 outraLista = new [3];
 outraLista[0] = true; -- A primeira atribuição (Bool) definirá outraLista como Bool[]
 outraLista[1] = false;
+outraLista[2] = false;
 print outraLista[0];  -- Deve imprimir true
 print outraLista[1];  -- Deve imprimir false
 
 print 100; -- Separador para saída
 iterate (i : 3) {
     print i; -- Deve imprimir 3, 2, 1
+}
+
+iterate (valor : outraLista) {
+    print valor;
 }
 
 --  Linhas abaixo para testes futuros de ERRO DE TIPO ou ERRO DE EXECUÇÃO 
