@@ -75,6 +75,17 @@ public class TyChecker extends LangVisitor {
         return null; // Retorna null se não encontrar
     }
 
+    private void updateVarType(String name, VType newType, int line, int col) {
+        for (int i = tyEnv.size() - 1; i >= 0; i--) {
+            Hashtable<String, VType> scope = tyEnv.get(i);
+            if (scope.containsKey(name)) {
+                scope.put(name, newType);
+                return;
+            }
+        }
+        throw new RuntimeException("Erro Semântico (" + line + ", " + col + "): Variável '" + name + "' não encontrada para atualização de tipo.");
+    }
+
     public void visit(Program p) {
         collectFunctionSignatures(p.getFuncs());
 
@@ -260,19 +271,27 @@ public class TyChecker extends LangVisitor {
 
     public void visit(IterateWithVar d) {
         d.getCondExp().accept(this);
-        VType condType = stk.pop();
+        VType condExpTy = stk.pop();
 
-        if (condType.getTypeValue() != CLTypes.INT) {
-            // Futuramente, poderia aceitar arrays aqui
-            throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + "): Expressão de iteração para 'iterate' com variável deve ser um inteiro.");
+        VType iterVarTy;
+        if (condExpTy.getTypeValue() == CLTypes.INT) {
+            iterVarTy = VTyInt.newInt();
+        } else if (condExpTy.getTypeValue() == CLTypes.ARR) {
+            iterVarTy = ((VTyArr) condExpTy).getTyArg();
+            if (iterVarTy.getTypeValue() == CLTypes.UNDETERMINED) {
+                 throw new RuntimeException(
+                    "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Não é possível iterar sobre um array com tipo de elemento indeterminado. Atribua um valor a um elemento do array primeiro para determinar seu tipo."
+                );
+            }
+        } else {
+            throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + "): A expressão no 'iterate' deve ser um inteiro ou um array. Encontrado: " + condExpTy.toString());
         }
 
         enterScope();
-        String varName = d.getIterVar().getName();
-        if (findVar(varName) != null) {
-             throw new RuntimeException("Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Variável de iteração '" + varName + "' já declarada em escopo externo.");
-        }
-        declareVar(varName, VTyInt.newInt(), d.getLine(), d.getCol()); // Garante que a variável do loop é Int
+        
+        String varName = ((Var)d.getIterVar()).getName();
+        declareVar(varName, iterVarTy, d.getLine(), d.getCol());
+        
         d.getBody().accept(this);
         leaveScope();
     }
@@ -350,9 +369,9 @@ public class TyChecker extends LangVisitor {
             td.getTypeValue() == CLTypes.FLOAT ||
             td.getTypeValue() == CLTypes.BOOL ||
             td.getTypeValue() == CLTypes.CHAR ||
-            td.getTypeValue() == CLTypes.NULL) {
-        } else {
-            throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + ") Operandos incompatíveis para 'print'.");
+            td.getTypeValue() == CLTypes.NULL ||
+            td.getTypeValue() == CLTypes.ARR) {} else {
+            throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + ") Operandos incompatíveis");
         }
 
     }
@@ -500,6 +519,7 @@ public class TyChecker extends LangVisitor {
         boolean isFloatComparison = leftType.match(VTyFloat.newFloat()) && rightType.match(VTyFloat.newFloat());
 
         if (isIntComparison || isFloatComparison) {
+            // O RESULTADO de uma operação de comparação (<, ==, !=) é SEMPRE um booleano.
             stk.push(VTyBool.newBool());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() +
