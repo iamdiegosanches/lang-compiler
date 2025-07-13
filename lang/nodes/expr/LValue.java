@@ -8,5 +8,7 @@ public interface LValue {
 
     void accept(LangVisitor v);
 
+    int getLine();
+    int getCol();
     
 }

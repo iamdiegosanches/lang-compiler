@@ -72,19 +72,19 @@ non terminal ArrayList<FunDef> funSeq;
 */
 
 precedence left SEMICOLON;
-//precedence left OR;
+
 precedence left AND;
 precedence left EQUAL_EQUAL, NOT_EQUAL;
 precedence left LESS_THAN;
 
 precedence left PLUS, MINUS;
-precedence left MULT, MOD, DIV;
+precedence left MULT, DIV, MOD;
 
 precedence right NOT;
 precedence left CLOSE_PAREN; 
 
 precedence nonassoc ELSE;
-precedence nonassoc GREATER_THAN, LESS_THAN;
+precedence nonassoc GREATER_THAN;
 
 /* The grammar rules */
 
@@ -133,6 +133,10 @@ cmd ::= block:b                                                              {: 
 
 lvalue ::= ID:id                            {: RESULT = new Var(idleft, idright, id);        :}
        ;
+
+lvalueList ::= lvalue:lv COMMA lvalueList:lvs  {: lvs.add(0, lv); RESULT = lvs; :}
+             | lvalue:lv                      {: ArrayList<LValue> list = new ArrayList<>(); list.add(lv); RESULT = list; :}
+             ;
 
 btype ::= INT_TYPE:t                        {: RESULT = new TyInt(tleft, tright); :}
        |  FLOAT_TYPE:t                      {: RESULT = new TyFloat(tleft, tright); :}

@@ -1,0 +1,8 @@
+main() {
+    x = 0;
+    a = 3;
+    if (x < a*a) {
+        print true;
+    }
+    print a*a;
+}

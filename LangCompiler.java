@@ -12,85 +12,85 @@ import lang.nodes.visitors.tychkvisitor.TyChecker;
 
 public class LangCompiler{
 
-     public static void runLexer(LangLexer lex)  throws IOException,Exception{
-           Symbol tk = lex.nextToken();
-           while(tk.sym != LangParserSym.EOF){
-               System.out.println("(" + tk.left + ","  + tk.right + ")" + tk.sym);
-               tk = lex.nextToken();
-           }
-           System.out.println(tk.toString());
-     }
+      public static void runLexer(LangLexer lex)  throws IOException,Exception{
+            Symbol tk = lex.nextToken();
+            while(tk.sym != LangParserSym.EOF){
+                  System.out.println("(" + tk.left + ","  + tk.right + ")" + tk.sym);
+                  tk = lex.nextToken();
+            }
+            System.out.println(tk.toString());
+      }
 
 
-    public static void interpretAndType(LangParser p)  throws IOException,Exception{
-        Symbol presult = p.parse();
-        CNode root = (CNode)presult.value;
-        if(root != null){
-              TyChecker tv = new TyChecker();
-              tv.enterScope();
-              root.accept(tv);
-              tv.leaveScope();
-              InterpVisitor v = new InterpVisitor();
-              root.accept(v);
-        }else{
-              System.out.println("root was null !");
-        }
-    }
+      public static void interpretAndType(LangParser p)  throws IOException,Exception{
+            Symbol presult = p.parse();
+            CNode root = (CNode)presult.value;
+            if(root != null){
+                  TyChecker tv = new TyChecker();
+                  tv.enterScope();
+                  root.accept(tv);
+                  tv.leaveScope();
+                  InterpVisitor v = new InterpVisitor();
+                  root.accept(v);
+            }else{
+                  System.out.println("root was null !");
+            }
+      }
 
 
-    public static void interpret(LangParser p)  throws IOException,Exception{
-        Symbol presult = p.parse();
-        CNode root = (CNode)presult.value;
-        if(root != null){
-              InterpVisitor v = new InterpVisitor();
-              root.accept(v);
-        }else{
-              System.out.println("root was null !");
-        }
-    }
+      public static void interpret(LangParser p)  throws IOException,Exception{
+            Symbol presult = p.parse();
+            CNode root = (CNode)presult.value;
+            if(root != null){
+                  InterpVisitor v = new InterpVisitor();
+                  root.accept(v);
+            }else{
+                  System.out.println("root was null !");
+            }
+      }
 
-    public static void interpretDebug(LangParser p)  throws IOException,Exception{
-        Symbol presult = p.parse();
-        CNode root = (CNode)presult.value;
-        if(root != null){
-              InterpVisitor v = new InterpVisitor();
-              root.accept(v);
+      public static void interpretDebug(LangParser p)  throws IOException,Exception{
+            Symbol presult = p.parse();
+            CNode root = (CNode)presult.value;
+            if(root != null){
+                  InterpVisitor v = new InterpVisitor();
+                  root.accept(v);
 
-        }else{
-              System.out.println("root was null !");
-        }
-    }
+            }else{
+                  System.out.println("root was null !");
+            }
+      }
 
-     public static void main(String args[])  throws IOException,Exception {
-          int fname = 0;
-          if(args.length < 1 || args.length > 2){
-             System.out.println("use java LangCompiler [opcao] <nome-de-arquivo>");
-             System.out.println("opcao: ");
-             System.out.println("   -lex  : lista os toke ");
-             System.out.println("   -i    : Interpreta o programa.");
-             System.out.println("   -ti    : Verifica Tipos e interpreta.");
-             System.out.println("   -id   : Interpreta o programa e imprime a tabela de ambiente de execução.");
-             //System.out.println("         :");
-             System.exit(0);
-          }else{
-              if(args.length == 2){ fname = 1;}
-              LangLexer lex = new LangLexer(new FileReader(args[fname]));
-              LangParser p = new LangParser(lex);
-              if(args.length == 2 && args[0].equals("-lex")){
-                    runLexer(lex);
-                    System.exit(0);
-              }
-            //   else if(args.length == 2 && args[0].equals("-ty")){
-            //         interpretAndType(p);
-            //         System.exit(0);
-            //   }
-              else if(args.length == 2 && args[0].equals("-i")){
-                    interpretAndType(p);
-                    System.exit(0);
-              }else if(args.length == 2 && args[0].equals("-id")){
-                    interpretDebug(p);
-                    System.exit(0);
-              }
-          }
-     }
+      public static void main(String args[])  throws IOException,Exception {
+            int fname = 0;
+            if(args.length < 1 || args.length > 2){
+                  System.out.println("use java LangCompiler [opcao] <nome-de-arquivo>");
+                  System.out.println("opcao: ");
+                  System.out.println("   -lex  : lista os toke ");
+                  System.out.println("   -i    : Interpreta o programa.");
+                  System.out.println("   -ti    : Verifica Tipos e interpreta.");
+                  System.out.println("   -id   : Interpreta o programa e imprime a tabela de ambiente de execução.");
+                  //System.out.println("         :");
+                  System.exit(0);
+            }else{
+                  if(args.length == 2){ fname = 1;}
+                  LangLexer lex = new LangLexer(new FileReader(args[fname]));
+                  LangParser p = new LangParser(lex);
+                  if(args.length == 2 && args[0].equals("-lex")){
+                        runLexer(lex);
+                        System.exit(0);
+                  }
+                  //   else if(args.length == 2 && args[0].equals("-ty")){
+                  //         interpretAndType(p);
+                  //         System.exit(0);
+                  //   }
+                  else if(args.length == 2 && args[0].equals("-i")){
+                        interpretAndType(p);
+                        System.exit(0);
+                  }else if(args.length == 2 && args[0].equals("-id")){
+                        interpretDebug(p);
+                        System.exit(0);
+                  }
+            }
+      }
 }

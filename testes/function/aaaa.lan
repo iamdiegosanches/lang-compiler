@@ -6,5 +6,15 @@ divmod(num :: Int, divisor :: Int) : Int, Int {
 
 
 main() {
-    divmod() <q, r>;
+    divmod(5, 2) <q, r>;
+
+    print q;
+    print '\n';
+    print r;
+    print '\n';
+
+    q = 15;
+    print q;
+    print '\n';
+
 }

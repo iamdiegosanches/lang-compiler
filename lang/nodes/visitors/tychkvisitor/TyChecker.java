@@ -389,6 +389,7 @@ public class TyChecker extends LangVisitor {
         e.getRight().accept(this);
         VType td = stk.pop();
         VType te = stk.pop();
+
         if (td.getTypeValue() == CLTypes.INT &&
             te.getTypeValue() == CLTypes.INT) {
             stk.push(VTyInt.newInt());
@@ -596,7 +597,6 @@ public class TyChecker extends LangVisitor {
                     throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Função '" + e.getID() + "' não retorna valores para serem indexados.");
                 }
 
-                stk.push(declaredReturnTypes.get(0)); 
                 if (e.getReturnIndex() instanceof IntLit) {
                     int indexVal = ((IntLit) e.getReturnIndex()).getValue();
                     if (indexVal < 0 || indexVal >= declaredReturnTypes.size()) {
@@ -605,13 +605,11 @@ public class TyChecker extends LangVisitor {
                     stk.push(declaredReturnTypes.get(indexVal));
                 } else {
 
-                     if (declaredReturnTypes.isEmpty()) {
+                    if (declaredReturnTypes.isEmpty()) {
                         throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Função '" + e.getID() + "' não retorna valores para serem indexados.");
                     }
                     stk.push(declaredReturnTypes.get(0));
                 }
-
-
             } else {
 
                 ArrayList<VType> declaredReturnTypes = funcType.getReturnTypes();
@@ -631,74 +629,60 @@ public class TyChecker extends LangVisitor {
     @Override
     public void visit(FCallCommand d) {
         TypeEntry tyd = ctx.get(d.getID());
-        if (tyd != null) {
-            VTyFuncProper funcType = (VTyFuncProper) tyd.ty;
+        if (tyd == null) {
+            throw new RuntimeException("Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Função '" + d.getID() + "' não declarada.");
+        }
 
-            ArrayList<VType> actualArgTypes = new ArrayList<>();
-            for (Exp argExp : d.getArgs()) {
-                argExp.accept(this);
-                actualArgTypes.add(stk.pop());
+        VTyFuncProper funcType = (VTyFuncProper) tyd.ty;
+
+        ArrayList<VType> actualArgTypes = new ArrayList<>();
+        for (Exp argExp : d.getArgs()) {
+            argExp.accept(this);
+            actualArgTypes.add(stk.pop());
+        }
+        if (!funcType.matchParamTypes(actualArgTypes)) {
+            throw new RuntimeException(
+                "Erro Semântico (" + d.getLine() + ", " + d.getCol() +
+                "): Tipos dos argumentos na chamada da função '" + d.getID() + "' estão incorretos."
+            );
+        }
+
+        ArrayList<VType> declaredReturnTypes = funcType.getReturnTypes();
+        ArrayList<LValue> returnTargets = d.getReturnTargets();
+
+        if (declaredReturnTypes.size() != returnTargets.size()) {
+            throw new RuntimeException(
+                "Erro Semântico (" + d.getLine() + ", " + d.getCol() +
+                "): O número de variáveis (" + returnTargets.size() +
+                ") não corresponde ao número de retornos da função '" + d.getID() +
+                "' (" + declaredReturnTypes.size() + ")."
+            );
+        }
+
+        for (int i = 0; i < returnTargets.size(); i++) {
+            LValue target = returnTargets.get(i);
+            VType returnType = declaredReturnTypes.get(i); 
+
+            if (!(target instanceof Var)) {
+                throw new RuntimeException("Erro Semântico (" + target.getLine() + ", " + target.getCol() + "): Apenas variáveis simples são suportadas como destino de retorno de função.");
             }
 
-            if (!funcType.matchParamTypes(actualArgTypes)) {
-                throw new RuntimeException(
-                    "Erro de tipo (" + d.getLine() + ", " + d.getCol() +
-                    "): Chamada de função incompatível para '" + d.getID() +
-                    "'. Esperado: " + funcType.getParamTypes() + ", Encontrado: " + actualArgTypes
-                );
-            }
+            String varName = ((Var) target).getName();
+            VType existingVarType = findVar(varName);
 
-            ArrayList<VType> declaredReturnTypes = funcType.getReturnTypes();
-            ArrayList<LValue> returnTargets = d.getReturnTargets();
-
-            if (declaredReturnTypes.size() != returnTargets.size()) {
-                throw new RuntimeException(
-                    "Erro de tipo (" + d.getLine() + ", " + d.getCol() +
-                    "): Número de valores retornados pela função '" + d.getID() +
-                    "' (" + declaredReturnTypes.size() + ") não corresponde ao número de destinos de atribuição (" + returnTargets.size() + ")."
-                );
-            }
-
-            for (int i = 0; i < declaredReturnTypes.size(); i++) {
-                LValue target = returnTargets.get(i);
-                VType expectedType = declaredReturnTypes.get(i);
-
-                if (!(target instanceof Var)) {
-                     throw new RuntimeException("Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Destino de atribuição de retorno não suportado (apenas variáveis simples por enquanto).");
-                }
-                String varName = ((Var)target).getName();
-                VType targetVarType = findVar(varName);
-
-                if (targetVarType == null) {
-                   
-                    throw new RuntimeException("Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Variável '" + varName + "' não declarada para receber valor de retorno.");
-                }
-
-                if (!targetVarType.match(expectedType)) {
-                    if (expectedType.getTypeValue() == CLTypes.NULL && (targetVarType.getTypeValue() == CLTypes.INT ||
-                                                                    targetVarType.getTypeValue() == CLTypes.FLOAT ||
-                                                                    targetVarType.getTypeValue() == CLTypes.BOOL ||
-                                                                    targetVarType.getTypeValue() == CLTypes.CHAR)) {
-                        throw new RuntimeException(
-                            "Erro Semântico (" + d.getLine() + ", " + d.getCol() +
-                            "): Tipo de atribuição incompatível. Esperado '" + targetVarType.toString() +
-                            "', encontrado 'null' para tipo primitivo na posição " + i + "."
-                        );
-                    }
-                    if (!targetVarType.match(expectedType) && expectedType.getTypeValue() != CLTypes.NULL) {
-                        throw new RuntimeException(
-                            "Erro Semântico (" + d.getLine() + ", " + d.getCol() +
-                            "): Tipo de atribuição incompatível na posição " + i + ". Esperado '" + targetVarType.toString() +
-                            "', encontrado '" + expectedType.toString() + "' para '" + varName + "'."
-                        );
-                    }
+            if (existingVarType == null) {
+                declareVar(varName, returnType, target.getLine(), target.getCol());
+            } else {
+                if (!existingVarType.match(returnType)) {
+                    throw new RuntimeException(
+                        "Erro Semântico (" + target.getLine() + ", " + target.getCol() +
+                        "): Conflito de tipos para a variável '" + varName + "'. A função retorna '" +
+                        returnType.toString() + "', mas a variável existente é do tipo '" + existingVarType.toString() + "'."
+                    );
                 }
             }
-        } else {
-            throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + ") Chamada a função não declarada " + d.getID());
         }
     }
-
 
     public void visit(IntLit e) {
         stk.push(VTyInt.newInt());

@@ -447,8 +447,7 @@ public class InterpVisitor extends LangVisitor {
     public void visit(FCall e) {
         FunDef called = fn.get(e.getID());
         if (called != null) {
-            enterScope();
-
+            
             ArrayList<Object> evaluatedArgs = new ArrayList<>();
             for (Exp argExp : e.getArgs()) {
                 argExp.accept(this);
@@ -458,6 +457,10 @@ public class InterpVisitor extends LangVisitor {
             if (evaluatedArgs.size() != called.getParams().size()) {
                 throw new RuntimeException("Erro de execução (" + e.getLine() + ", " + e.getCol() + "): Número de argumentos incompatível para a função '" + e.getID() + "'. Esperado " + called.getParams().size() + ", encontrado " + evaluatedArgs.size() + ".");
             }
+            
+            Stack<Hashtable<String, Object>> callerEnv = this.env;
+            this.env = new Stack<>();
+            enterScope();
 
             for (int i = 0; i < called.getParams().size(); i++) {
                 Bind paramBind = called.getParams().get(i);
@@ -466,12 +469,11 @@ public class InterpVisitor extends LangVisitor {
             }
 
             called.accept(this);
-
             Object result = returnValue;
             retMode = false;
 
-            leaveScope();
-
+            this.env = callerEnv;
+            
             if (e.getReturnIndex() != null) {
                 if (!(result instanceof ArrayList)) {
                     throw new RuntimeException("Erro de execução (" + e.getLine() + ", " + e.getCol() + "): Tentativa de indexar um valor não-lista de retorno da função '" + e.getID() + "'.");
@@ -504,8 +506,7 @@ public class InterpVisitor extends LangVisitor {
         if (!retMode) {
             FunDef called = fn.get(d.getID());
             if (called != null) {
-                enterScope();
-
+                
                 ArrayList<Object> evaluatedArgs = new ArrayList<>();
                 for (Exp argExp : d.getArgs()) {
                     argExp.accept(this);
@@ -515,6 +516,10 @@ public class InterpVisitor extends LangVisitor {
                 if (evaluatedArgs.size() != called.getParams().size()) {
                     throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Número de argumentos incompatível para a função '" + d.getID() + "'. Esperado " + called.getParams().size() + ", encontrado " + evaluatedArgs.size() + ".");
                 }
+
+                Stack<Hashtable<String, Object>> callerEnv = this.env;
+                this.env = new Stack<>();
+                enterScope();
 
                 for (int i = 0; i < called.getParams().size(); i++) {
                     Bind paramBind = called.getParams().get(i);
@@ -526,7 +531,7 @@ public class InterpVisitor extends LangVisitor {
                 Object result = returnValue;
                 retMode = false;
 
-                leaveScope();
+                this.env = callerEnv;
 
                 if (!(result instanceof ArrayList)) {
                     throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Função '" + d.getID() + "' não retornou uma lista de valores para atribuição múltipla.");
@@ -552,7 +557,6 @@ public class InterpVisitor extends LangVisitor {
             }
         }
     }
-
 
     public void visit(IntLit e) {
         stk.push(e.getValue());
