@@ -1,8 +1,7 @@
---main(){
+main(){
    r1 = 'A' == '\065';
    r2 = 'A' == 'A';
    r3 = '\066' == 'A';
-   print '\070';
    print r1;
    print '\n';
    print r2;
@@ -10,4 +9,4 @@
    print r3;
    print '\n';
 
---}
+}

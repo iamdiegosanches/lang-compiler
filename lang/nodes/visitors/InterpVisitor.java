@@ -5,8 +5,6 @@ import lang.nodes.expr.*;
 import lang.nodes.command.*;
 import lang.nodes.types.*;
 import lang.nodes.*;
-import lang.nodes.dotutils.DotFile;
-import lang.nodes.environment.Env;
 
 // import lang.nodes.environment.Env;
 import java.util.Stack;
@@ -21,6 +19,7 @@ public class InterpVisitor extends LangVisitor {
     private Stack < Object > stk;
     private Hashtable < String, FunDef > fn;
     private boolean retMode;
+    private Object returnValue;
 
     private Scanner scanner = new Scanner(System.in);
 
@@ -28,6 +27,7 @@ public class InterpVisitor extends LangVisitor {
         stk = new Stack < Object > ();
         fn = new Hashtable < String, FunDef > ();
         retMode = false;
+        returnValue = null;
         env = new Stack<>();
         env.push(new Hashtable<String, Object>()); // Escopo global
     }
@@ -65,29 +65,32 @@ public class InterpVisitor extends LangVisitor {
         System.out.println(env);
     }
 
-    // visit(Program p) e visit(FunDef d) precisam ser adaptadas para o escopo de função
     public void visit(Program p) {
         FunDef start = null;
         for (FunDef f: p.getFuncs()) {
             fn.put(f.getFname(), f);
-            if (f.getFname().equals("inicio")) {
+            if (f.getFname().equals("main")) {
                 start = f;
             }
         }
         if (start != null) {
+            if (!start.getParams().isEmpty() || !start.getRet().isEmpty()) {
+                throw new RuntimeException("Erro: A função 'main' deve ter 0 parâmetros e 0 retornos.");
+            }
             start.getBody().accept(this);
         } else {
-            throw new RuntimeException("Erro: Não há uma função de início no programa.");
+            throw new RuntimeException("Erro: Não há uma função 'main' no programa.");
         }
     }
 
     public void visit(FunDef d) {
+        retMode = false;
+        returnValue = null;
         d.getBody().accept(this);
     }
 
     public void visit(Bind d) {
         // Não precisamos fazer nada aqui,
-        // O Fcall já toma as providências necessárias !
     }
 
     public void visit(CSeq d) {
@@ -100,14 +103,17 @@ public class InterpVisitor extends LangVisitor {
     }
 
     public void visit(CAttr d) {
-        d.getExp().accept(this);
-        Object value = stk.pop();
+        if (!retMode) {
+            d.getExp().accept(this);
+            Object value = stk.pop();
 
-        LValue lvalue = d.getVar();
-
-        String varName = ((Var) lvalue).getName();
-        store(varName, value); 
-        
+            LValue lvalue = d.getVar();
+            if (!(lvalue instanceof Var)) {
+                throw new RuntimeException("Erro de execução: Atribuição a LValue não suportada (apenas variáveis simples por enquanto).");
+            }
+            String varName = ((Var) lvalue).getName();
+            store(varName, value);
+        }
     }
 
     public void visit(CDecl d) {
@@ -127,16 +133,13 @@ public class InterpVisitor extends LangVisitor {
             if (!(loopLimit instanceof Integer)) {
                 throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Condição do 'iterate' simples deve ser um inteiro.");
             }
-            
+
             int count = (Integer) loopLimit;
-            
+
             if (count > 0) {
-                enterScope(); 
-                while (count > 0) {
+                enterScope();
+                while (count > 0 && !retMode) {
                     d.getBody().accept(this);
-                    if (retMode) {
-                        break; 
-                    }
                     count--;
                 }
                 leaveScope();
@@ -149,22 +152,19 @@ public class InterpVisitor extends LangVisitor {
             d.getCondExp().accept(this);
             Object iterSource = stk.pop();
             String varName = d.getIterVar().getName();
-            
+
             if (!(iterSource instanceof Integer)) {
                 throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Expressão de iteração para 'iterate' com variável deve ser um inteiro.");
             }
-            
+
             int count = (Integer) iterSource;
-            
+
             if (count > 0) {
                 enterScope();
-                
-                for (int i = 0; i < count; i++) {
-                    store(varName, count - i); 
+
+                for (int i = 0; i < count && !retMode; i++) {
+                    store(varName, count - i);
                     d.getBody().accept(this);
-                    if (retMode) {
-                        break;
-                    }
                 }
                 leaveScope();
             }
@@ -190,7 +190,12 @@ public class InterpVisitor extends LangVisitor {
 
     public void visit(Return d) {
         if (!retMode) {
-            d.getExp().accept(this);
+            ArrayList<Object> returnedValues = new ArrayList<>();
+            for (Exp exp : d.getExp()) {
+                exp.accept(this);
+                returnedValues.add(stk.pop()); 
+            }
+            returnValue = returnedValues; 
             retMode = true;
         }
     }
@@ -207,7 +212,7 @@ public class InterpVisitor extends LangVisitor {
             LValue lv = d.getTarget();
 
             if (!(lv instanceof Var)) {
-                throw new RuntimeException("Erro: read só suporta variáveis simples por enquanto."); 
+                throw new RuntimeException("Erro: read só suporta variáveis simples por enquanto.");
             }
 
             String varName = ((Var) lv).getName();
@@ -216,18 +221,7 @@ public class InterpVisitor extends LangVisitor {
             String input = scanner.nextLine();
             Object value = parseInput(input);
 
-            boolean found = false;
-            for (int i = env.size() - 1; i >= 0; i--) {
-                if (env.get(i).containsKey(varName)) {
-                    env.get(i).put(varName, value);
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found) {
-                throw new RuntimeException("Erro em Read: Variável '" + varName + "' não encontrada.");
-            }
+            store(varName, value);
         }
     }
 
@@ -449,23 +443,119 @@ public class InterpVisitor extends LangVisitor {
         }
     }
 
+    @Override
     public void visit(FCall e) {
-        // FunDef called = fn.get(e.getID());
-        // if (called != null) {
-        //     for (int j = e.getArgs().size() - 1; j >= 0; j--) {
-        //         e.getArgs().get(j).accept(this);
-        //     }
-        //     Env env1 = env;
-        //     env = new Env();
-        //     for (Bind b: called.getParams()) {
-        //         env.store(b.getVar().getName(), stk.pop());
-        //     }
-        //     called.accept(this);
-        //     retMode = false;
-        //     env = env1;
-        // } else {
-        //     throw new RuntimeException("Chamada a função não delcarada em " + e.getLine() + ", " + e.getCol() + " : " + e.getID());
-        // }
+        FunDef called = fn.get(e.getID());
+        if (called != null) {
+            
+            ArrayList<Object> evaluatedArgs = new ArrayList<>();
+            for (Exp argExp : e.getArgs()) {
+                argExp.accept(this);
+                evaluatedArgs.add(stk.pop());
+            }
+
+            if (evaluatedArgs.size() != called.getParams().size()) {
+                throw new RuntimeException("Erro de execução (" + e.getLine() + ", " + e.getCol() + "): Número de argumentos incompatível para a função '" + e.getID() + "'. Esperado " + called.getParams().size() + ", encontrado " + evaluatedArgs.size() + ".");
+            }
+            
+            Stack<Hashtable<String, Object>> callerEnv = this.env;
+            this.env = new Stack<>();
+            enterScope();
+
+            for (int i = 0; i < called.getParams().size(); i++) {
+                Bind paramBind = called.getParams().get(i);
+                Object argValue = evaluatedArgs.get(i);
+                store(paramBind.getVar().getName(), argValue);
+            }
+
+            called.accept(this);
+            Object result = returnValue;
+            retMode = false;
+
+            this.env = callerEnv;
+            
+            if (e.getReturnIndex() != null) {
+                if (!(result instanceof ArrayList)) {
+                    throw new RuntimeException("Erro de execução (" + e.getLine() + ", " + e.getCol() + "): Tentativa de indexar um valor não-lista de retorno da função '" + e.getID() + "'.");
+                }
+                ArrayList<Object> returnedList = (ArrayList<Object>) result;
+
+                e.getReturnIndex().accept(this);
+                Object idxValue = stk.pop();
+
+                if (!(idxValue instanceof Integer)) {
+                    throw new RuntimeException("Erro de execução (" + e.getLine() + ", " + e.getCol() + "): O índice de retorno da função '" + e.getID() + "' deve ser um inteiro.");
+                }
+                int index = (Integer) idxValue;
+
+                if (index < 0 || index >= returnedList.size()) {
+                    throw new RuntimeException("Erro de execução (" + e.getLine() + ", " + e.getCol() + "): Índice de retorno fora dos limites para a função '" + e.getID() + "'. Índice: " + index + ", Tamanho: " + returnedList.size() + ".");
+                }
+                stk.push(returnedList.get(index));
+            } else {
+                stk.push(result);
+            }
+
+        } else {
+            throw new RuntimeException("Chamada a função não declarada em " + e.getLine() + ", " + e.getCol() + " : " + e.getID());
+        }
+    }
+
+    @Override
+    public void visit(FCallCommand d) {
+        if (!retMode) {
+            FunDef called = fn.get(d.getID());
+            if (called != null) {
+                
+                ArrayList<Object> evaluatedArgs = new ArrayList<>();
+                for (Exp argExp : d.getArgs()) {
+                    argExp.accept(this);
+                    evaluatedArgs.add(stk.pop());
+                }
+
+                if (evaluatedArgs.size() != called.getParams().size()) {
+                    throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Número de argumentos incompatível para a função '" + d.getID() + "'. Esperado " + called.getParams().size() + ", encontrado " + evaluatedArgs.size() + ".");
+                }
+
+                Stack<Hashtable<String, Object>> callerEnv = this.env;
+                this.env = new Stack<>();
+                enterScope();
+
+                for (int i = 0; i < called.getParams().size(); i++) {
+                    Bind paramBind = called.getParams().get(i);
+                    Object argValue = evaluatedArgs.get(i);
+                    store(paramBind.getVar().getName(), argValue);
+                }
+
+                called.accept(this);
+                Object result = returnValue;
+                retMode = false;
+
+                this.env = callerEnv;
+
+                if (!(result instanceof ArrayList)) {
+                    throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Função '" + d.getID() + "' não retornou uma lista de valores para atribuição múltipla.");
+                }
+                ArrayList<Object> returnedList = (ArrayList<Object>) result;
+
+                if (returnedList.size() != d.getReturnTargets().size()) {
+                    throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Número de valores retornados pela função '" + d.getID() + "' (" + returnedList.size() + ") não corresponde ao número de destinos de atribuição (" + d.getReturnTargets().size() + ").");
+                }
+
+                for (int i = 0; i < returnedList.size(); i++) {
+                    LValue target = d.getReturnTargets().get(i);
+                    Object valueToAssign = returnedList.get(i);
+
+                    if (!(target instanceof Var)) {
+                        throw new RuntimeException("Erro de execução: Atribuição de retorno a LValue não suportada (apenas variáveis simples por enquanto).");
+                    }
+                    store(((Var) target).getName(), valueToAssign);
+                }
+
+            } else {
+                throw new RuntimeException("Chamada a função não declarada em " + d.getLine() + ", " + d.getCol() + " : " + d.getID());
+            }
+        }
     }
 
     public void visit(IntLit e) {

@@ -1,10 +1,6 @@
 package lang.nodes;
 
 
-import lang.nodes.dotutils.DotFile;
-import lang.nodes.environment.Env;
-
-
 public abstract class CNode{
      private int l,c;
 

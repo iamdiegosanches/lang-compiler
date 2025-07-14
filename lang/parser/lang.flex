@@ -71,7 +71,7 @@ import java_cup.runtime.Symbol;
 %}
 
 ID    = [a-z][a-zA-Z0-9_]*
-TYID  = [A-Z][a-zA-Z0-9_]*
+//TYID  = [A-Z][a-zA-Z0-9_]*
 INT   = [0-9]+
 FLOAT = (([0-9]+\.[0-9]+)|(\.[0-9]+))
 CHAR  = \'([^\\'\n\r]|\\[nrtb'\\]|\\[0-9]{3})\' 
@@ -89,7 +89,7 @@ CHAR  = \'([^\\'\n\r]|\\[nrtb'\\]|\\[0-9]{3})\'
 //    "abstract"  { return new Symbol(LangParserSym.ABSTRACT, yyline + 1, yycolumn + 1); }
     "if"        { return new Symbol(LangParserSym.IF, yyline + 1, yycolumn + 1); }
     "else"      { return new Symbol(LangParserSym.ELSE, yyline + 1, yycolumn + 1); }
-//    "return"    { return new Symbol(LangParserSym.RETURN, yyline + 1, yycolumn + 1); }
+    "return"    { return new Symbol(LangParserSym.RETURN, yyline + 1, yycolumn + 1); }
     "read"      { return new Symbol(LangParserSym.READ, yyline + 1, yycolumn + 1); }
     "print"     { return new Symbol(LangParserSym.PRINT, yyline + 1, yycolumn + 1); }
     "iterate"   { return new Symbol(LangParserSym.ITERATE, yyline + 1, yycolumn + 1); }
@@ -111,12 +111,12 @@ CHAR  = \'([^\\'\n\r]|\\[nrtb'\\]|\\[0-9]{3})\'
     "/"         { return new Symbol(LangParserSym.DIV, yyline + 1, yycolumn + 1); }
     "%"         { return new Symbol(LangParserSym.MOD, yyline + 1, yycolumn + 1); }
     "<"         { return new Symbol(LangParserSym.LESS_THAN, yyline + 1, yycolumn + 1); }
-//    ">"         { return new Symbol(LangParserSym.GREATER_THAN, yyline + 1, yycolumn + 1); }
+    ">"         { return new Symbol(LangParserSym.GREATER_THAN, yyline + 1, yycolumn + 1); }
     "!"         { return new Symbol(LangParserSym.NOT, yyline + 1, yycolumn + 1); }
     "("         { return new Symbol(LangParserSym.OPEN_PAREN, yyline + 1, yycolumn + 1); }
     ")"         { return new Symbol(LangParserSym.CLOSE_PAREN, yyline + 1, yycolumn + 1); }
-//    "["         { return new Symbol(LangParserSym.OPEN_BRACKET, yyline + 1, yycolumn + 1); }
-//    "]"         { return new Symbol(LangParserSym.CLOSE_BRACKET, yyline + 1, yycolumn + 1); }
+    "["         { return new Symbol(LangParserSym.OPEN_BRACKET, yyline + 1, yycolumn + 1); }
+    "]"         { return new Symbol(LangParserSym.CLOSE_BRACKET, yyline + 1, yycolumn + 1); }
     "{"         { return new Symbol(LangParserSym.OPEN_BRACE, yyline + 1, yycolumn + 1); }
     "}"         { return new Symbol(LangParserSym.CLOSE_BRACE, yyline + 1, yycolumn + 1); }
 
@@ -146,7 +146,7 @@ CHAR  = \'([^\\'\n\r]|\\[nrtb'\\]|\\[0-9]{3})\'
 
     "--".* { /* ignora */ }
     "{-" { commentLevel = 1; yybegin(Comment); }
-    [ \t\n\rz]+    { /*  */ }
+    [ \t\n\r]+    { /*  */ }
 
     .                      { throw new RuntimeException("Token inesperado: \"" + yytext() + "\" na linha " + (yyline+1) + " coluna " + (yycolumn+1)); }
 }

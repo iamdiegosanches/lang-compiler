@@ -1,6 +1,6 @@
---main(){
+main(){
      x = 0;
      read x;
      print x;
      print '\n';
---}
+}
