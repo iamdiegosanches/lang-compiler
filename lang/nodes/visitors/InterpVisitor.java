@@ -210,18 +210,48 @@ public class InterpVisitor extends LangVisitor {
     public void visit(Read d) {
         if (!retMode) {
             LValue lv = d.getTarget();
-
             if (!(lv instanceof Var)) {
                 throw new RuntimeException("Erro: read só suporta variáveis simples por enquanto.");
             }
 
             String varName = ((Var) lv).getName();
+            Object currentValue = read(varName);
+
+            if (currentValue == null) {
+                throw new RuntimeException("Erro em read (" + d.getLine() + "," + d.getCol() + "): Não é possível ler para uma variável não inicializada ou de tipo complexo nulo.");
+            }
 
             System.out.print(varName + " = ");
             String input = scanner.nextLine();
-            Object value = parseInput(input);
+            Object newValue;
 
-            store(varName, value);
+            try {
+                if (currentValue instanceof Integer) {
+                    newValue = Integer.parseInt(input);
+                } else if (currentValue instanceof Float) {
+                    newValue = Float.parseFloat(input);
+                } else if (currentValue instanceof Boolean) {
+                    if (input.equals("true")) {
+                        newValue = true;
+                    } else if (input.equals("false")) {
+                        newValue = false;
+                    } else {
+                        throw new NumberFormatException();
+                    }
+                } else if (currentValue instanceof Character) {
+                    if (input.length() == 1) {
+                        newValue = input.charAt(0);
+                    } else {
+                        throw new NumberFormatException();
+                    }
+                } else {
+                    throw new RuntimeException("Tipo da variável '" + varName + "' não suportado pelo comando read.");
+                }
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("Erro em read (" + d.getLine() + "," + d.getCol() + "): A entrada '" + input + "' é inválida para o tipo da variável '" + varName + "'.");
+            }
+
+            store(varName, newValue);
         }
     }
 
@@ -580,20 +610,6 @@ public class InterpVisitor extends LangVisitor {
     public void visit(TyBool t) {}
     public void visit(TyInt t) {}
     public void visit(TyFloat t) {}
-
-    private Object parseInput(String input) {
-        if (input.matches("^-?\\d+$")) {
-            return Integer.parseInt(input);
-        } else if (input.matches("^-?\\d+\\.\\d+$")) {
-            return Float.parseFloat(input);
-        } else if (input.equals("true") || input.equals("false")) {
-            return Boolean.parseBoolean(input);
-        } else if (input.length() == 1) {
-            return input.charAt(0);
-        } else {
-            throw new RuntimeException("Erro em read: Entrada inválida ou tipo não suportado.");
-        }
-    }
 
 
 }
