@@ -4,7 +4,9 @@ fn() : Int,Char,Bool {
 
 
 main() {
-    fn()<x, y, z>;
+    x = fn()[2];
+    y = fn()[0];
+    z = fn()[1];
     print x;
     print '\n';
     print y;

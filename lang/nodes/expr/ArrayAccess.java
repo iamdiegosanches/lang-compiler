@@ -1,7 +1,6 @@
 package lang.nodes.expr;
 
 import lang.nodes.LangVisitor;
-import lang.nodes.visitors.GVizVisitor;
 
 public class ArrayAccess extends Exp implements LValue {
     private LValue arrayVar; // A variável do vetor (ex: 'meuArray')
@@ -31,8 +30,4 @@ public class ArrayAccess extends Exp implements LValue {
         v.visit(this);
     }
 
-    @Override
-    public void accept(GVizVisitor v) {
-        v.visit(this);
-    }
 }

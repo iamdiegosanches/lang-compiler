@@ -788,10 +788,14 @@ public class TyChecker extends LangVisitor {
         e.getSizeExp().accept(this);
         VType sizeType = stk.pop();
 
-        if (!(sizeType.getTypeValue() == CLTypes.INT)) {
-            throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Tamanho do array deve ser um inteiro.");
+        if (sizeType.getTypeValue() != CLTypes.INT) {
+            throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): O tamanho do array deve ser uma expressão do tipo Int.");
         }
-        stk.push(new VTyArr(VTyUndetermined.newUndetermined()));
+
+        e.getType().accept(this);
+        VType baseType = stk.pop();
+
+        stk.push(new VTyArr(baseType));
     }
 
     public void visit(ArrayAccess e) {

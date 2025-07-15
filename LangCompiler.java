@@ -21,20 +21,6 @@ public class LangCompiler {
             System.out.println(tk.toString());
       }
 
-      public static void runDot(LangParser p, String fname) throws IOException, Exception {
-            Symbol presult = p.parse();
-            CNode root = (CNode) presult.value;
-            if (root != null) {
-                  GVizVisitor gv = new GVizVisitor();
-                  root.accept(gv);
-                  String dotfname = fname.replaceFirst("\\.[^\\.]+$", ".dot");
-                  System.out.println("Escrevendo saida para: " + dotfname);
-                  gv.saveDot(dotfname);
-            } else {
-                  System.out.println("root was null !");
-            }
-      }
-
       public static void interpretAndType(LangParser p) throws IOException, Exception {
             Symbol presult = p.parse();
             CNode root = (CNode) presult.value;
@@ -89,7 +75,6 @@ public class LangCompiler {
                   System.out.println("use java LangCompiler [opcao] <nome-de-arquivo>");
                   System.out.println("opcao: ");
                   System.out.println("   -lex  : lista os toke ");
-                  System.out.println("   -dot  : gera um arquivo dot contendo uma representação da AST.");
                   System.out.println("   -i    : Interpreta o programa.");
                   System.out.println("   -ti    : Verifica Tipos e interpreta.");
                   System.out.println("   -id   : Interpreta o programa e imprime a tabela de ambiente de execução.");
@@ -104,9 +89,6 @@ public class LangCompiler {
                   LangParser p = new LangParser(lex);
                   if (args.length == 2 && args[0].equals("-lex")) {
                         runLexer(lex);
-                        System.exit(0);
-                  } else if (args.length == 2 && args[0].equals("-dot")) {
-                        runDot(p, args[fname]);
                         System.exit(0);
                   }
                   // else if(args.length == 2 && args[0].equals("-ty")){

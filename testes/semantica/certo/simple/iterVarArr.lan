@@ -1,6 +1,6 @@
 main(){
    v = new Int[10];
-   iterate(i:10){
+   iterate(i:9){
        v[i] = 2*i;
    }
    iterate(i : v){

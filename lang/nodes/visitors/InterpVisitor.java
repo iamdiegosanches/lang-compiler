@@ -245,7 +245,7 @@ public class InterpVisitor extends LangVisitor {
     public void visit(Print d) {
         if (!retMode) {
             d.getExp().accept(this);
-            System.out.println(stk.pop());
+            System.out.print(stk.pop());
         }
     }
 
@@ -674,11 +674,27 @@ public class InterpVisitor extends LangVisitor {
         }
 
         Object[] newArray = new Object[size];
-        // Inicializa o array com nulls, pois o tipo do elemento não é especificado na alocação
+        
+        Object defaultValue = getDefaultValue(e.getType());
+
         for (int i = 0; i < size; i++) {
-            newArray[i] = null;
+            newArray[i] = defaultValue;
         }
-        stk.push(newArray); // Coloca o novo array na pilha
+        
+        stk.push(newArray);
+    }
+
+    private Object getDefaultValue(CType type) {
+        if (type instanceof TyInt) {
+            return 0;
+        } else if (type instanceof TyFloat) {
+            return 0.0f;
+        } else if (type instanceof TyBool) {
+            return false;
+        } else if (type instanceof TyChar) {
+            return '\0'; 
+        }
+        return null;
     }
 
     public void visit(ArrayAccess e) {

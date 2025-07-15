@@ -52,7 +52,6 @@ terminal Float              FLOAT;
 terminal String             ID;
 terminal Boolean            TRUE,FALSE;
 
-terminal OPEN_BRACKET, CLOSE_BRACKET;
 terminal NEW;
 
 /* Non terminals */
@@ -179,7 +178,7 @@ expr ::= expr:e1 AND:t expr:e2            {: RESULT = new And(tleft,tright,e1,e2
                                           {: RESULT = new FCall(idleft, idright, id, new ArrayList<Exp>(), idx); :}
        | ID:id OPEN_PAREN expList:es CLOSE_PAREN OPEN_BRACKET expr:idx CLOSE_BRACKET 
                                           {: RESULT = new FCall(idleft, idright, id, es, idx); :}
-       | NEW:n OPEN_BRACKET expr:e CLOSE_BRACKET {: RESULT = new NewArray(nleft, nright, e); :}
+       | NEW:n btype:t OPEN_BRACKET expr:e CLOSE_BRACKET {: RESULT = new NewArray(nleft, nright, t, e); :}
        ;
 
 expList ::= expr:e COMMA expList:es        {: es.add(0, e); RESULT = es; :}
