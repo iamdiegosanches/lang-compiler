@@ -65,7 +65,7 @@ public class LangCompiler {
             System.out.println("accepted");
         } catch (Exception e) {
             System.out.println("rejected");
-            e.printStackTrace();
+            // e.printStackTrace();
         }
     }
 
