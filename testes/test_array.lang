@@ -1,0 +1,31 @@
+minhaLista = new [5]; 
+
+minhaLista[0] = 10;
+minhaLista[1] = 20;
+minhaLista[2] = minhaLista[0] + minhaLista[1]; -- Acessa elementos e realiza operação
+
+print minhaLista[0]; -- Deve imprimir 10
+print minhaLista[1]; -- Deve imprimir 20
+print minhaLista[2]; -- Deve imprimir 30 (10 + 20)
+
+outraLista = new [3];
+outraLista[0] = true; -- A primeira atribuição (Bool) definirá outraLista como Bool[]
+outraLista[1] = false;
+outraLista[2] = false;
+print outraLista[0];  -- Deve imprimir true
+print outraLista[1];  -- Deve imprimir false
+
+print 100; -- Separador para saída
+iterate (i : 3) {
+    print i; -- Deve imprimir 3, 2, 1
+}
+
+iterate (valor : outraLista) {
+    print valor;
+}
+
+--  Linhas abaixo para testes futuros de ERRO DE TIPO ou ERRO DE EXECUÇÃO 
+-- Descomente estas linhas APENAS após implementar a verificação de tipos e o interpretador
+-- minhaLista[3] = false; -- ISTO DEVE GERAR ERRO DE TIPO (minhaLista já é Int[], não pode receber Bool)
+-- minhaLista[10] = 50; -- ISTO DEVE GERAR ERRO DE EXECUÇÃO (índice fora dos limites)
+-- print minhaLista[10]; -- ISTO DEVE GERAR ERRO DE EXECUÇÃO (índice fora dos limites)

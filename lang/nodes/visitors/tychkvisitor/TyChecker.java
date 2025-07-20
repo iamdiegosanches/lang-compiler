@@ -75,6 +75,17 @@ public class TyChecker extends LangVisitor {
         return null; // Retorna null se não encontrar
     }
 
+    private void updateVarType(String name, VType newType, int line, int col) {
+        for (int i = tyEnv.size() - 1; i >= 0; i--) {
+            Hashtable<String, VType> scope = tyEnv.get(i);
+            if (scope.containsKey(name)) {
+                scope.put(name, newType);
+                return;
+            }
+        }
+        throw new RuntimeException("Erro Semântico (" + line + ", " + col + "): Variável '" + name + "' não encontrada para atualização de tipo.");
+    }
+
     public void visit(Program p) {
         collectFunctionSignatures(p.getFuncs());
 
@@ -162,18 +173,63 @@ public class TyChecker extends LangVisitor {
         VType expType = stk.pop();
 
         LValue lvalue = d.getVar();
-        
-        String varName = ((Var) lvalue).getName();
-        VType varType = findVar(varName);
 
-        if (varType == null) {
-            declareVar(varName, expType, d.getLine(), d.getCol());
-        } else {
-            if (!varType.match(expType)) {
+        if (lvalue instanceof Var) {
+            String varName = ((Var) lvalue).getName();
+            VType varType = findVar(varName);
+
+            if (varType == null) {
+                // Variável não declarada, assume o tipo da expressão (primeira atribuição)
+                declareVar(varName, expType, d.getLine(), d.getCol());
+            } else {
+                // Variável já declarada, verifica compatibilidade de tipos
+                if (!varType.match(expType)) {
+                    throw new RuntimeException(
+                        "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipos incompatíveis na atribuição para '" + varName + "'. Esperado '" + varType.toString() + "', encontrado '" + expType.toString() + "'."
+                    );
+                }
+            }
+        } else if (lvalue instanceof ArrayAccess) {
+            ArrayAccess arrayAccess = (ArrayAccess) lvalue;
+            
+            // Obter o tipo do array base
+            arrayAccess.getArrayVar().accept(this);
+            VType arrayVarType = stk.pop();
+
+            // Verificar se o array base é realmente um tipo de array
+            if (!(arrayVarType.getTypeValue() == CLTypes.ARR)) {
                 throw new RuntimeException(
-                    "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipos incompatíveis na atribuição para '" + varName + "'. Esperado '" + varType.toString() + "', encontrado '" + expType.toString() + "'."
+                    "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tentativa de atribuição a elemento de array em uma variável que não é um array. Tipo encontrado: " + arrayVarType.toString()
                 );
             }
+            VTyArr actualArrayType = (VTyArr) arrayVarType;
+
+            // Obter o tipo da expressão de índice
+            arrayAccess.getIndexExp().accept(this);
+            VType indexExpType = stk.pop();
+
+            // Verificar se o índice é um inteiro
+            if (!(indexExpType.getTypeValue() == CLTypes.INT)) {
+                throw new RuntimeException(
+                    "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Índice de array deve ser um inteiro. Tipo encontrado: " + indexExpType.toString()
+                );
+            }
+
+            VType currentElementType = actualArrayType.getTyArg();
+
+            if (currentElementType.getTypeValue() == CLTypes.UNDETERMINED) {
+                // Se o tipo do elemento ainda é indeterminado, define-o com base no tipo da expressão
+                actualArrayType.setTyArg(expType);
+            } else {
+                // Se o tipo do elemento já é determinado, verifica a compatibilidade
+                if (!currentElementType.match(expType)) {
+                    throw new RuntimeException(
+                        "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipos incompatíveis na atribuição a elemento de array. Esperado '" + currentElementType.toString() + "', encontrado '" + expType.toString() + "'."
+                    );
+                }
+            }
+        } else {
+            throw new RuntimeException("Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): LValue de atribuição não suportado.");
         }
     }
 
@@ -215,19 +271,27 @@ public class TyChecker extends LangVisitor {
 
     public void visit(IterateWithVar d) {
         d.getCondExp().accept(this);
-        VType condType = stk.pop();
+        VType condExpTy = stk.pop();
 
-        if (condType.getTypeValue() != CLTypes.INT) {
-            // Futuramente, poderia aceitar arrays aqui
-            throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + "): Expressão de iteração para 'iterate' com variável deve ser um inteiro.");
+        VType iterVarTy;
+        if (condExpTy.getTypeValue() == CLTypes.INT) {
+            iterVarTy = VTyInt.newInt();
+        } else if (condExpTy.getTypeValue() == CLTypes.ARR) {
+            iterVarTy = ((VTyArr) condExpTy).getTyArg();
+            if (iterVarTy.getTypeValue() == CLTypes.UNDETERMINED) {
+                 throw new RuntimeException(
+                    "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Não é possível iterar sobre um array com tipo de elemento indeterminado. Atribua um valor a um elemento do array primeiro para determinar seu tipo."
+                );
+            }
+        } else {
+            throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + "): A expressão no 'iterate' deve ser um inteiro ou um array. Encontrado: " + condExpTy.toString());
         }
 
         enterScope();
-        String varName = d.getIterVar().getName();
-        if (findVar(varName) != null) {
-             throw new RuntimeException("Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Variável de iteração '" + varName + "' já declarada em escopo externo.");
-        }
-        declareVar(varName, VTyInt.newInt(), d.getLine(), d.getCol()); // Garante que a variável do loop é Int
+        
+        String varName = ((Var)d.getIterVar()).getName();
+        declareVar(varName, iterVarTy, d.getLine(), d.getCol());
+        
         d.getBody().accept(this);
         leaveScope();
     }
@@ -305,29 +369,38 @@ public class TyChecker extends LangVisitor {
             td.getTypeValue() == CLTypes.FLOAT ||
             td.getTypeValue() == CLTypes.BOOL ||
             td.getTypeValue() == CLTypes.CHAR ||
-            td.getTypeValue() == CLTypes.NULL) {
-        } else {
-            throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + ") Operandos incompatíveis para 'print'.");
+            td.getTypeValue() == CLTypes.NULL ||
+            td.getTypeValue() == CLTypes.ARR) {} else {
+            throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + ") Operandos incompatíveis para print");
         }
 
     }
 
     public void visit(Read d) {
         LValue lv = d.getTarget();
-        if (!(lv instanceof Var)) {
-            throw new RuntimeException("Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Comando 'read' só suporta variáveis simples por enquanto.");
-        }
         
-        VType varType = findVar(((Var)lv).getName()); 
-        if (varType == null) {
-            throw new RuntimeException("Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Variável '" + ((Var)lv).getName() + "' não declarada para leitura.");
-        }
+        if (lv instanceof Var) {
+            lv.accept(this);
+            VType varType = stk.pop();
 
-        if (!(varType instanceof VTyInt || varType instanceof VTyFloat ||
-            varType instanceof VTyChar || varType instanceof VTyBool)) {
-            throw new RuntimeException(
-                "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipo do destino da leitura ('" + varType.toString() + "') não é permitido no comando 'read'. Apenas Int, Float, Char, Bool são permitidos."
-            );
+            if (!(varType instanceof VTyInt || varType instanceof VTyFloat ||
+                varType instanceof VTyChar || varType instanceof VTyBool)) {
+                throw new RuntimeException(
+                    "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipo do destino da leitura ('" + varType.toString() + "') não é permitido no comando 'read'. Apenas Int, Float, Char, Bool são permitidos para variáveis simples."
+                );
+            }
+        } else if (lv instanceof ArrayAccess) {
+            lv.accept(this);
+            VType elementType = stk.pop();
+
+            if (!(elementType instanceof VTyInt || elementType instanceof VTyFloat ||
+                elementType instanceof VTyChar || elementType instanceof VTyBool)) {
+                throw new RuntimeException(
+                    "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipo do elemento do array ('" + elementType.toString() + "') não é permitido no comando 'read'. Apenas Int, Float, Char, Bool são permitidos para elementos de array."
+                );
+            }
+        } else {
+            throw new RuntimeException("Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Alvo de leitura não suportado.");
         }
         stk.push(varType);
     }
@@ -708,6 +781,49 @@ public class TyChecker extends LangVisitor {
     public void visit(CharLit e) { stk.push(VTyChar.newChar()); }
 
     public void visit(NullLit e) { stk.push(VTyNull.newNull()); }
+
+    public void visit(NewArray e) {
+        e.getSizeExp().accept(this);
+        VType sizeType = stk.pop();
+
+        if (!(sizeType.getTypeValue() == CLTypes.INT)) {
+            throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Tamanho do array deve ser um inteiro.");
+        }
+        stk.push(new VTyArr(VTyUndetermined.newUndetermined()));
+    }
+
+    public void visit(ArrayAccess e) {
+        e.getArrayVar().accept(this); 
+        VType arrayType = stk.pop();
+
+        if (!(arrayType.getTypeValue() == CLTypes.ARR)) {
+            throw new RuntimeException(
+                "Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Tentativa de acesso indexado em uma variável que não é um array. Tipo encontrado: " + arrayType.toString()
+            );
+        }
+        VTyArr actualArrayType = (VTyArr) arrayType;
+
+        e.getIndexExp().accept(this);
+        VType indexType = stk.pop();
+
+        if (!(indexType.getTypeValue() == CLTypes.INT)) {
+            throw new RuntimeException(
+                "Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Índice de array deve ser um inteiro. Tipo encontrado: " + indexType.toString()
+            );
+        }
+        
+        stk.push(actualArrayType.getTyArg());
+    }
+
+    public void visit(TyArr t) {
+        if (t.getElementType() != null) {
+            t.getElementType().accept(this);
+            VType elementType = stk.pop();
+            stk.push(new VTyArr(elementType));
+        } else {
+            stk.push(new VTyArr(VTyUndetermined.newUndetermined()));
+        }
+    }
 
     public static void printEnv(Hashtable < String, VType > t) {
         for (java.util.Map.Entry < String, VType > ent: t.entrySet()) {
