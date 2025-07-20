@@ -192,7 +192,7 @@ public class InterpVisitor extends LangVisitor {
                 int count = (Integer) iterSource;
                 if (count > 0) {
                     for (int i = 0; i < count; i++) {
-                        store(varName, count - i);
+                        store(varName, i);
                         d.getBody().accept(this);
                         if (retMode) {
                             break;
