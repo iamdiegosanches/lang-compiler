@@ -66,6 +66,7 @@ non terminal ArrayList<Exp>  expList;
 non terminal ArrayList<LValue> lvalueList;
 non terminal ArrayList<CType> typeList;
 non terminal ArrayList<FunDef> funSeq;
+non terminal FCall          fcall_expr;
 
 /*
   Precedencia e associatividade dos operadores.
@@ -127,6 +128,7 @@ cmd ::= block:b                                                              {: 
        | IF:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c1 ELSE cmd:c2               {: RESULT = new If(ileft, iright, e, c1, c2); :}
        | READ:r lvalue:lv SEMICOLON                                          {: RESULT = new Read(rleft, rright, lv); :}
        | RETURN:r expList:es SEMICOLON                                       {: RESULT = new Return(rleft, rright, es); :}
+       | fcall_expr:fc SEMICOLON                                             {: RESULT = new FCallCommand(fcleft, fcright, fc.getID(), fc.getArgs(), new ArrayList<LValue>()); :}
        | ID:id OPEN_PAREN expList:args CLOSE_PAREN LESS_THAN lvalueList:lvs GREATER_THAN SEMICOLON 
                                                                              {: RESULT = new FCallCommand(idleft, idright, id, args, lvs); :}
        | ID:id OPEN_PAREN CLOSE_PAREN LESS_THAN lvalueList:lvs GREATER_THAN SEMICOLON 
@@ -145,7 +147,7 @@ btype ::= INT_TYPE:t                        {: RESULT = new TyInt(tleft, tright)
        |  FLOAT_TYPE:t                      {: RESULT = new TyFloat(tleft, tright); :}
        |  BOOL_TYPE:t                       {: RESULT = new TyBool(tleft, tright); :}
        |  CHAR_TYPE:t                       {: RESULT = new TyChar(tleft, tright); :}
-//      |  btype:t OPEN_BRACKET CLOSE_BRACKET {: RESULT = new TyArr(tleft, tright, t); :}
+       |  btype:t OPEN_BRACKET CLOSE_BRACKET {: RESULT = new TyArr(tleft, tright, t); :}
        ;
 
 block ::= OPEN_BRACE cmdList:e CLOSE_BRACE  {: RESULT = e; :}
@@ -188,6 +190,11 @@ expList ::= expr:e COMMA expList:es        {: es.add(0, e); RESULT = es; :}
 typeList ::= btype:t COMMA typeList:ts    {: ts.add(0, t); RESULT = ts; :}
            | btype:t                      {: ArrayList<CType> list = new ArrayList<>(); list.add(t); RESULT = list; :}
            ;
+
+fcall_expr ::= ID:id OPEN_PAREN CLOSE_PAREN     {: RESULT = new FCall(idleft, idright, id, new ArrayList<Exp>()); :}
+             | ID:id OPEN_PAREN expList:es CLOSE_PAREN
+                                                {: RESULT = new FCall(idleft, idright, id, es); :}
+             ;
 
 /*op ::= AND:
        | LESS_THAN
