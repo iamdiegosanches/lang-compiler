@@ -93,7 +93,7 @@ CHAR  = \'([^\\'\n\r]|\\[nrtb'\\]|\\[0-9]{3})\'
     "read"      { return new Symbol(LangParserSym.READ, yyline + 1, yycolumn + 1); }
     "print"     { return new Symbol(LangParserSym.PRINT, yyline + 1, yycolumn + 1); }
     "iterate"   { return new Symbol(LangParserSym.ITERATE, yyline + 1, yycolumn + 1); }
-    "new"       { return new Symbol(LangParserSym.NEW, yyline + 1, yycolumn + 1); }
+//    "new"       { return new Symbol(LangParserSym.NEW, yyline + 1, yycolumn + 1); }
     "null"      { return new Symbol(LangParserSym.NULL, yyline + 1, yycolumn + 1); }
 
     "=="        { return new Symbol(LangParserSym.EQUAL_EQUAL, yyline + 1, yycolumn + 1); }

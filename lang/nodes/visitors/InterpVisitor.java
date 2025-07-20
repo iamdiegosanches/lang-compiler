@@ -4,9 +4,9 @@ import lang.nodes.decl.*;
 import lang.nodes.expr.*;
 import lang.nodes.command.*;
 import lang.nodes.types.*;
-import lang.nodes.visitors.tychkvisitor.VTyUndetermined;
 import lang.nodes.*;
 
+// import lang.nodes.environment.Env;
 import java.util.Stack;
 import java.util.Hashtable;
 import java.util.ArrayList;
@@ -43,9 +43,6 @@ public class InterpVisitor extends LangVisitor {
     private void store(String name, Object value) {
         for (int i = env.size() - 1; i >= 0; i--) {
             Hashtable<String, Object> scope = env.get(i);
-            if (scope == null) {
-                throw new RuntimeException("Erro interno: Escopo nulo encontrado na pilha de ambientes em índice " + i + ". Isso não deveria acontecer.");
-            }
             if (scope.containsKey(name)) {
                 scope.put(name, value);
                 return;
@@ -57,9 +54,6 @@ public class InterpVisitor extends LangVisitor {
     private Object read(String name) {
         for (int i = env.size() - 1; i >= 0; i--) {
             Hashtable<String, Object> scope = env.get(i);
-            if (scope == null) { // Verificação defensiva
-                throw new RuntimeException("Erro interno: Escopo nulo encontrado na pilha de ambientes ao ler variável.");
-            }
             if (scope.containsKey(name)) {
                 return scope.get(name);
             }
@@ -113,36 +107,12 @@ public class InterpVisitor extends LangVisitor {
             d.getExp().accept(this);
             Object value = stk.pop();
 
-        LValue lvalue = d.getVar();
-
-        if (lvalue instanceof Var) {
+            LValue lvalue = d.getVar();
+            if (!(lvalue instanceof Var)) {
+                throw new RuntimeException("Erro de execução: Atribuição a LValue não suportada (apenas variáveis simples por enquanto).");
+            }
             String varName = ((Var) lvalue).getName();
-            store(varName, value); 
-        } else if (lvalue instanceof ArrayAccess) {
-            ArrayAccess arrayAccess = (ArrayAccess) lvalue;
-            
-            arrayAccess.getArrayVar().accept(this);
-            Object arrayObj = stk.pop();
-            
-            arrayAccess.getIndexExp().accept(this);
-            Object indexObj = stk.pop();
-
-            if (!(arrayObj instanceof Object[])) {
-                throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Tentativa de acesso como array em uma variável não é um array.");
-            }
-            if (!(indexObj instanceof Integer)) {
-                throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Índice de array deve ser um inteiro.");
-            }
-
-            Object[] array = (Object[]) arrayObj;
-            int index = (Integer) indexObj;
-
-            if (index < 0 || index >= array.length) {
-                throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Índice de array fora dos limites: " + index + ", tamanho: " + array.length);
-            }
-            array[index] = value;
-        } else {
-            throw new RuntimeException("Erro: LValue não suportado na atribuição.");
+            store(varName, value);
         }
     }
 
@@ -167,12 +137,10 @@ public class InterpVisitor extends LangVisitor {
             int count = (Integer) loopLimit;
 
             if (count > 0) {
-                enterScope(); 
-                for (int i = 0; i < count; i++) {
+                enterScope();
+                while (count > 0 && !retMode) {
                     d.getBody().accept(this);
-                    if (retMode) {
-                        break; 
-                    }
+                    count--;
                 }
                 leaveScope();
             }
@@ -183,32 +151,23 @@ public class InterpVisitor extends LangVisitor {
         if (!retMode) {
             d.getCondExp().accept(this);
             Object iterSource = stk.pop();
-            String varName = ((Var) d.getIterVar()).getName(); 
+            String varName = d.getIterVar().getName();
 
-            enterScope();
+            if (!(iterSource instanceof Integer)) {
+                throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Expressão de iteração para 'iterate' com variável deve ser um inteiro.");
+            }
 
-            if (iterSource instanceof Integer) {
-                int count = (Integer) iterSource;
-                if (count > 0) {
-                    for (int i = 0; i < count; i++) {
-                        store(varName, count - i);
-                        d.getBody().accept(this);
-                        if (retMode) {
-                            break;
-                        }
-                    }
-                }
-            } else if (iterSource instanceof Object[]) {
-                Object[] array = (Object[]) iterSource;
-                for (int i = 0; i < array.length; i++) {
-                    store(varName, array[i]);
+            int count = (Integer) iterSource;
+
+            if (count > 0) {
+                enterScope();
+
+                for (int i = 0; i < count && !retMode; i++) {
+                    store(varName, count - i);
                     d.getBody().accept(this);
                 }
-            } else {
-                throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Expressão de iteração para 'iterate' com variável deve ser um inteiro ou um array. Tipo encontrado: " + iterSource.getClass().getSimpleName());
+                leaveScope();
             }
-            
-            leaveScope();
         }
     }
 
@@ -244,16 +203,13 @@ public class InterpVisitor extends LangVisitor {
     public void visit(Print d) {
         if (!retMode) {
             d.getExp().accept(this);
-            System.out.println(stk.pop());
+            System.out.print(stk.pop());
         }
     }
 
     public void visit(Read d) {
         if (!retMode) {
             LValue lv = d.getTarget();
-<<<<<<< HEAD
-            System.out.print(lv.getName() + " = ");
-=======
             if (!(lv instanceof Var)) {
                 throw new RuntimeException("Erro: read só suporta variáveis simples por enquanto.");
             }
@@ -266,55 +222,9 @@ public class InterpVisitor extends LangVisitor {
             }
 
             System.out.print(varName + " = ");
->>>>>>> upstream/main
             String input = scanner.nextLine();
             Object newValue;
 
-<<<<<<< HEAD
-            if (lv instanceof Var) {
-                String varName = ((Var) lv).getName();
-                boolean found = false;
-                for (int i = env.size() - 1; i >= 0; i--) {
-                    Hashtable<String, Object> scope = env.get(i);
-                    if (scope == null) {
-                        throw new RuntimeException("Erro interno: Escopo nulo encontrado na pilha de ambientes ao ler variável.");
-                    }
-                    if (scope.containsKey(varName)) {
-                        env.get(i).put(varName, value);
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    throw new RuntimeException("Erro em Read: Variável '" + varName + "' não encontrada.");
-                }
-            } else if (lv instanceof ArrayAccess) {
-                ArrayAccess arrayAccess = (ArrayAccess) lv;
-
-                arrayAccess.getArrayVar().accept(this);
-                Object arrayObj = stk.pop();
-
-                arrayAccess.getIndexExp().accept(this);
-                Object indexObj = stk.pop();
-
-                if (!(arrayObj instanceof Object[])) {
-                    throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Tentativa de acesso como array em uma variável não é um array.");
-                }
-                if (!(indexObj instanceof Integer)) {
-                    throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Índice de array deve ser um inteiro.");
-                }
-
-                Object[] array = (Object[]) arrayObj;
-                int index = (Integer) indexObj;
-
-                if (index < 0 || index >= array.length) {
-                    throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Índice de array fora dos limites: " + index + ", tamanho: " + array.length);
-                }
-                array[index] = value;
-            } else {
-                throw new RuntimeException("Erro: read só suporta variáveis simples ou acesso a elementos de array por enquanto.");
-            }
-=======
             try {
                 if (currentValue instanceof Integer) {
                     newValue = Integer.parseInt(input);
@@ -342,7 +252,6 @@ public class InterpVisitor extends LangVisitor {
             }
 
             store(varName, newValue);
->>>>>>> upstream/main
         }
     }
 
@@ -701,52 +610,6 @@ public class InterpVisitor extends LangVisitor {
     public void visit(TyBool t) {}
     public void visit(TyInt t) {}
     public void visit(TyFloat t) {}
-    public void visit(TyArr t) {}
-    public void visit(VTyUndetermined t) {}
-
-    public void visit(NewArray e) {
-        e.getSizeExp().accept(this);
-        Object sizeObj = stk.pop();
-
-        if (!(sizeObj instanceof Integer)) {
-            throw new RuntimeException("Erro de execução (" + e.getLine() + ", " + e.getCol() + "): Tamanho do array deve ser um inteiro.");
-        }
-        int size = (Integer) sizeObj;
-
-        if (size < 0) {
-            throw new RuntimeException("Erro de execução (" + e.getLine() + ", " + e.getCol() + "): Tamanho do array não pode ser negativo.");
-        }
-
-        Object[] newArray = new Object[size];
-        // Inicializa o array com nulls, pois o tipo do elemento não é especificado na alocação
-        for (int i = 0; i < size; i++) {
-            newArray[i] = null;
-        }
-        stk.push(newArray); // Coloca o novo array na pilha
-    }
-
-    public void visit(ArrayAccess e) {
-        e.getArrayVar().accept(this); 
-        Object arrayObj = stk.pop();
-        
-        e.getIndexExp().accept(this); 
-        Object indexObj = stk.pop();
-
-        if (!(arrayObj instanceof Object[])) {
-            throw new RuntimeException("Erro de execução (" + e.getLine() + ", " + e.getCol() + "): Tentativa de acesso como array em uma variável que não é um array.");
-        }
-        if (!(indexObj instanceof Integer)) {
-            throw new RuntimeException("Erro de execução (" + e.getLine() + ", " + e.getCol() + "): Índice de array deve ser um inteiro.");
-        }
-
-        Object[] array = (Object[]) arrayObj;
-        int index = (Integer) indexObj;
-
-        if (index < 0 || index >= array.length) {
-            throw new RuntimeException("Erro de execução (" + e.getLine() + ", " + e.getCol() + "): Índice de array fora dos limites: " + index + ", tamanho: " + array.length);
-        }
-        stk.push(array[index]);
-    }
 
 
 }

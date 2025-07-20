@@ -47,12 +47,9 @@ public class SimpleVisitor extends LangVisitor{
     public void visit(BoolLit e) { }
     public void visit(FloatLit e) { }
     public void visit(NullLit e) { }
-    public void visit(NewArray e) { }
-    public void visit(ArrayAccess e) { }
 
     public void visit(TyChar t) { }
     public void visit(CharLit e) { }
-    public void visit(TyArr e) { }
 
     public void visit(TyBool t) { }
     public void visit(TyInt t) { }
