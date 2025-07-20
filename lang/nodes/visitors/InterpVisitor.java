@@ -264,7 +264,6 @@ public class InterpVisitor extends LangVisitor {
             throw new RuntimeException("Erro em read (" + d.getLine() + "," + d.getCol() + "): Não é possível ler para uma variável não inicializada ou nula.");
         }
 
-        System.out.print("> ");
         String input = scanner.nextLine();
         Object newValue;
 

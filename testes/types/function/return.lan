@@ -1,4 +1,4 @@
-fn() : Int,Char {
+fn() : Int,Char,Bool {
     return 2+1, 'a', false;
 }
 
