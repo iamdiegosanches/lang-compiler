@@ -7,7 +7,6 @@ import lang.nodes.command.*;
 import lang.nodes.types.*;
 import lang.nodes.*;
 import lang.nodes.LangVisitor;
-import lang.nodes.dotutils.DotFile;
 
 public class VTyArr extends VType {
 

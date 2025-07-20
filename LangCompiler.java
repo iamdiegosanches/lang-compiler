@@ -1,14 +1,12 @@
 
 import java.io.*;
 import java_cup.runtime.*;
-import lang.nodes.dotutils.DotFile;
 import lang.nodes.CNode;
 import lang.nodes.environment.Env;
 import lang.parser.LangParser;
 import lang.parser.LangLexer;
 import lang.parser.LangParserSym;
 import lang.nodes.visitors.SimpleVisitor;
-import lang.nodes.visitors.GVizVisitor;
 import lang.nodes.visitors.InterpVisitor;
 import lang.nodes.visitors.tychkvisitor.TyChecker;
 
@@ -21,20 +19,6 @@ public class LangCompiler {
                   tk = lex.nextToken();
             }
             System.out.println(tk.toString());
-      }
-
-      public static void runDot(LangParser p, String fname) throws IOException, Exception {
-            Symbol presult = p.parse();
-            CNode root = (CNode) presult.value;
-            if (root != null) {
-                  GVizVisitor gv = new GVizVisitor();
-                  root.accept(gv);
-                  String dotfname = fname.replaceFirst("\\.[^\\.]+$", ".dot");
-                  System.out.println("Escrevendo saida para: " + dotfname);
-                  gv.saveDot(dotfname);
-            } else {
-                  System.out.println("root was null !");
-            }
       }
 
       public static void interpretAndType(LangParser p) throws IOException, Exception {
