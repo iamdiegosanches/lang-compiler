@@ -610,25 +610,26 @@ public class InterpVisitor extends LangVisitor {
 
                 this.env = callerEnv;
 
-                if (!(result instanceof ArrayList)) {
-                    throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Função '" + d.getID() + "' não retornou uma lista de valores para atribuição múltipla.");
-                }
-                ArrayList<Object> returnedList = (ArrayList<Object>) result;
-
-                if (returnedList.size() != d.getReturnTargets().size()) {
-                    throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Número de valores retornados pela função '" + d.getID() + "' (" + returnedList.size() + ") não corresponde ao número de destinos de atribuição (" + d.getReturnTargets().size() + ").");
-                }
-
-                for (int i = 0; i < returnedList.size(); i++) {
-                    LValue target = d.getReturnTargets().get(i);
-                    Object valueToAssign = returnedList.get(i);
-
-                    if (!(target instanceof Var)) {
-                        throw new RuntimeException("Erro de execução: Atribuição de retorno a LValue não suportada (apenas variáveis simples por enquanto).");
+                if (d.getReturnTargets() != null && !d.getReturnTargets().isEmpty()) {
+                    if (!(result instanceof ArrayList)) {
+                        throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Função '" + d.getID() + "' não retornou uma lista de valores para atribuição múltipla.");
                     }
-                    store(((Var) target).getName(), valueToAssign);
-                }
+                    ArrayList<Object> returnedList = (ArrayList<Object>) result;
 
+                    if (returnedList.size() != d.getReturnTargets().size()) {
+                        throw new RuntimeException("Erro de execução (" + d.getLine() + ", " + d.getCol() + "): Número de valores retornados pela função '" + d.getID() + "' (" + returnedList.size() + ") não corresponde ao número de destinos de atribuição (" + d.getReturnTargets().size() + ").");
+                    }
+
+                    for (int i = 0; i < returnedList.size(); i++) {
+                        LValue target = d.getReturnTargets().get(i);
+                        Object valueToAssign = returnedList.get(i);
+
+                        if (!(target instanceof Var)) {
+                            throw new RuntimeException("Erro de execução: Atribuição de retorno a LValue não suportada (apenas variáveis simples por enquanto).");
+                        }
+                        store(((Var) target).getName(), valueToAssign);
+                    }
+                }
             } else {
                 throw new RuntimeException("Chamada a função não declarada em " + d.getLine() + ", " + d.getCol() + " : " + d.getID());
             }
