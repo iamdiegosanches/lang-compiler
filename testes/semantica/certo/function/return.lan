@@ -4,9 +4,9 @@ fn() : Int,Char {
 
 
 main() {
-    x = fn()[2];
-    y = fn()[0];
-    z = fn()[1];
+    x = fn()[0];
+    y = fn()[1];
+    z = fn()[2];
     print x;
     print '\n';
     print y;

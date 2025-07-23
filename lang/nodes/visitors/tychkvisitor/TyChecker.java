@@ -179,10 +179,8 @@ public class TyChecker extends LangVisitor {
             VType varType = findVar(varName);
 
             if (varType == null) {
-                // Variável não declarada, assume o tipo da expressão (primeira atribuição)
                 declareVar(varName, expType, d.getLine(), d.getCol());
             } else {
-                // Variável já declarada, verifica compatibilidade de tipos
                 if (!varType.match(expType)) {
                     throw new RuntimeException(
                         "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipos incompatíveis na atribuição para '" + varName + "'. Esperado '" + varType.toString() + "', encontrado '" + expType.toString() + "'."
@@ -192,11 +190,9 @@ public class TyChecker extends LangVisitor {
         } else if (lvalue instanceof ArrayAccess) {
             ArrayAccess arrayAccess = (ArrayAccess) lvalue;
             
-            // Obter o tipo do array base
             arrayAccess.getArrayVar().accept(this);
             VType arrayVarType = stk.pop();
 
-            // Verificar se o array base é realmente um tipo de array
             if (!(arrayVarType.getTypeValue() == CLTypes.ARR)) {
                 throw new RuntimeException(
                     "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tentativa de atribuição a elemento de array em uma variável que não é um array. Tipo encontrado: " + arrayVarType.toString()
@@ -204,11 +200,9 @@ public class TyChecker extends LangVisitor {
             }
             VTyArr actualArrayType = (VTyArr) arrayVarType;
 
-            // Obter o tipo da expressão de índice
             arrayAccess.getIndexExp().accept(this);
             VType indexExpType = stk.pop();
 
-            // Verificar se o índice é um inteiro
             if (!(indexExpType.getTypeValue() == CLTypes.INT)) {
                 throw new RuntimeException(
                     "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Índice de array deve ser um inteiro. Tipo encontrado: " + indexExpType.toString()
@@ -218,10 +212,8 @@ public class TyChecker extends LangVisitor {
             VType currentElementType = actualArrayType.getTyArg();
 
             if (currentElementType.getTypeValue() == CLTypes.UNDETERMINED) {
-                // Se o tipo do elemento ainda é indeterminado, define-o com base no tipo da expressão
                 actualArrayType.setTyArg(expType);
             } else {
-                // Se o tipo do elemento já é determinado, verifica a compatibilidade
                 if (!currentElementType.match(expType)) {
                     throw new RuntimeException(
                         "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipos incompatíveis na atribuição a elemento de array. Esperado '" + currentElementType.toString() + "', encontrado '" + expType.toString() + "'."

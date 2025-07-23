@@ -90,13 +90,12 @@ public class LangCompiler {
                   if (args.length == 2 && args[0].equals("-lex")) {
                         runLexer(lex);
                         System.exit(0);
-                  }
-                  // else if(args.length == 2 && args[0].equals("-ty")){
-                  // interpretAndType(p);
-                  // System.exit(0);
-                  // }
-                  else if (args.length == 2 && args[0].equals("-i")) {
+                  } else if(args.length == 2 && args[0].equals("-t")){
                         interpretAndType(p);
+                        System.exit(0);
+                  }
+                  else if (args.length == 2 && args[0].equals("-i")) {
+                        interpret(p);
                         System.exit(0);
                   } else if (args.length == 2 && args[0].equals("-id")) {
                         interpretDebug(p);
