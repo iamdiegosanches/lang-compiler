@@ -1,4 +1,7 @@
-
+///////////////////////////////////////////////////////////////////////
+/// Álvaro Braz Cunha - 21.1.8163                                   ///
+/// Diego Sanches Nere dos Santos - 21.1.8003                       ///
+///////////////////////////////////////////////////////////////////////
 import java.io.*;
 import java_cup.runtime.*;
 import lang.nodes.CNode;
