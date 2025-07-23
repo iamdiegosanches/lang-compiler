@@ -11,6 +11,8 @@ public abstract class LangVisitor{
     public abstract void visit(Program p);
 
     public abstract void visit(FunDef d);
+    public abstract void visit(DataDef d); // <-- NOVO
+    public abstract void visit(Decl d);    // <-- NOVO
     public abstract void visit(Bind  d);
 
     public abstract void visit(CSeq d);
@@ -45,7 +47,10 @@ public abstract class LangVisitor{
     public abstract void visit(FloatLit e);
     public abstract void visit(NewArray e);
     public abstract void visit(ArrayAccess e);
+    public abstract void visit(NewObject e);
+    public abstract void visit(DotAccess e);
 
+    public abstract void visit(TyUser t);
     public abstract void visit(TyChar t);
     public abstract void visit(CharLit e);
     public abstract void visit(TyArr t);

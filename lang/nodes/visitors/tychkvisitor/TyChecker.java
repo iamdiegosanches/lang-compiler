@@ -8,12 +8,10 @@ import lang.nodes.*;
 
 import java.util.Hashtable;
 import java.util.Stack;
-import java.util.LinkedList;
 import java.util.ArrayList;
 
 public class TyChecker extends LangVisitor {
 
-    private LinkedList < String > errors;
     private Stack < VType > stk;
     private Hashtable < String, TypeEntry > ctx;
 
@@ -22,7 +20,6 @@ public class TyChecker extends LangVisitor {
     private ArrayList<VType> currentFunctionReturnTypes;
 
     public TyChecker() {
-        errors = new LinkedList < String > ();
         stk = new Stack < VType > ();
         ctx = new Hashtable < String, TypeEntry > ();
 
@@ -73,17 +70,6 @@ public class TyChecker extends LangVisitor {
             }
         }
         return null; // Retorna null se não encontrar
-    }
-
-    private void updateVarType(String name, VType newType, int line, int col) {
-        for (int i = tyEnv.size() - 1; i >= 0; i--) {
-            Hashtable<String, VType> scope = tyEnv.get(i);
-            if (scope.containsKey(name)) {
-                scope.put(name, newType);
-                return;
-            }
-        }
-        throw new RuntimeException("Erro Semântico (" + line + ", " + col + "): Variável '" + name + "' não encontrada para atualização de tipo.");
     }
 
     public void visit(Program p) {
@@ -827,5 +813,35 @@ public class TyChecker extends LangVisitor {
         for (java.util.Map.Entry < String, VType > ent: t.entrySet()) {
             System.out.println(ent.getKey() + " -> " + ent.getValue().toString());
         }
+    }
+
+    @Override
+    public void visit(DataDef d) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+    }
+
+    @Override
+    public void visit(Decl d) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+    }
+
+    @Override
+    public void visit(TyUser t) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+    }
+
+    @Override
+    public void visit(NewObject e) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+    }
+
+    @Override
+    public void visit(DotAccess e) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 }

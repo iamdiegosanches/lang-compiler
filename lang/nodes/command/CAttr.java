@@ -3,7 +3,6 @@ package lang.nodes.command;
 import lang.nodes.CNode;
 import lang.nodes.expr.Exp;
 import lang.nodes.expr.LValue;
-import lang.nodes.expr.Var;
 import lang.nodes.LangVisitor;
 
 public class CAttr extends CNode {

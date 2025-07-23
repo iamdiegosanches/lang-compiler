@@ -1,20 +1,30 @@
+// lang/nodes/Program.java
 package lang.nodes;
 
 import java.util.ArrayList;
+import lang.nodes.decl.Def; // <-- MUDANÇA AQUI
 import lang.nodes.decl.FunDef;
 
-public class Program extends CNode{
+public class Program extends CNode {
+    private ArrayList<Def> defs; // <-- MUDANÇA AQUI (de FunDef para Def)
 
-    private ArrayList<FunDef> funcs;
-
-
-    public Program(int l, int c, ArrayList<FunDef> fs){
-        super(l,c);
-        this.funcs = fs;
+    public Program(int l, int c, ArrayList<Def> ds) { // <-- MUDANÇA AQUI
+        super(l, c);
+        this.defs = ds;
     }
 
-    public ArrayList<FunDef> getFuncs(){return funcs;}
+    public ArrayList<Def> getDefs() { return defs; } // <-- MUDANÇA AQUI
 
-    public void accept(LangVisitor v){v.visit(this);}
+    // Opcional: manter getFuncs por compatibilidade ou remover
+    public ArrayList<FunDef> getFuncs() {
+        ArrayList<FunDef> funcs = new ArrayList<>();
+        for (Def d : defs) {
+            if (d instanceof FunDef) {
+                funcs.add((FunDef) d);
+            }
+        }
+        return funcs;
+    }
 
+    public void accept(LangVisitor v) { v.visit(this); }
 }

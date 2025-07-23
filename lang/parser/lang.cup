@@ -34,39 +34,47 @@ terminal                    NOT, AND;
 terminal                    LESS_THAN, EQUAL_EQUAL, ASSIGN, NOT_EQUAL;
 terminal                    OPEN_PAREN, CLOSE_PAREN;
 terminal                    OPEN_BRACE, CLOSE_BRACE;
+terminal                    OPEN_BRACKET, CLOSE_BRACKET;
 terminal                    SEMICOLON, PRINT, ITERATE, READ;
 terminal                    COMMA, COLON, DOUBLE_COLON;
-terminal                    INT_TYPE, FLOAT_TYPE, BOOL_TYPE;
+terminal                    INT_TYPE, FLOAT_TYPE, BOOL_TYPE, CHAR_TYPE;
 terminal                    IF, ELSE;
 terminal                    RETURN;
-terminal                    OPEN_BRACKET, CLOSE_BRACKET;
 terminal                    GREATER_THAN; 
-
-terminal CHAR_TYPE;
-terminal Character CHAR;
-
-terminal NULL;
+terminal                    NULL;
+terminal                    DATA, ABSTRACT; 
+terminal                    NEW;
+terminal                    DOT;
 
 terminal Integer            INT;
 terminal Float              FLOAT;
-terminal String             ID;
+terminal String             ID, TYID;
 terminal Boolean            TRUE,FALSE;
+terminal Character          CHAR;
 
-terminal NEW;
 
 /* Non terminals */
-non terminal Exp            expr;
-non terminal CNode          prog, cmd, cmdList, block;
-non terminal FunDef         fun;
-non terminal CType          btype;
-non terminal LValue         lvalue;
-non terminal Bind           param;
-non terminal ArrayList<Bind> params;
-non terminal ArrayList<Exp>  expList; 
+non terminal CNode           prog, cmd, cmdList, block;
+non terminal Exp             expr;
+non terminal FCall           fcall_expr;
+non terminal LValue          lvalue;
+non terminal CType           btype;
+non terminal Bind            param;
+
+non terminal Def             def;
+non terminal FunDef          fun;
+non terminal ArrayList<Def>  defSeq;
+
+non terminal DataDef         data_def;
+non terminal Decl            decl;
+non terminal ArrayList<Decl> decl_list;
+non terminal Exp             optional_size;
+
+non terminal ArrayList<Bind>   params;
+non terminal ArrayList<Exp>    expList;
 non terminal ArrayList<LValue> lvalueList;
-non terminal ArrayList<CType> typeList;
+non terminal ArrayList<CType>  typeList;
 non terminal ArrayList<FunDef> funSeq;
-non terminal FCall          fcall_expr;
 
 /*
   Precedencia e associatividade dos operadores.
@@ -75,36 +83,49 @@ non terminal FCall          fcall_expr;
 */
 
 precedence left SEMICOLON;
-
 precedence left AND;
 precedence left EQUAL_EQUAL, NOT_EQUAL;
-precedence left LESS_THAN;
-
+precedence nonassoc LESS_THAN, GREATER_THAN;
 precedence left PLUS, MINUS;
 precedence left MULT, DIV, MOD;
-
 precedence right NOT;
-precedence left OPEN_BRACKET;
-precedence left CLOSE_PAREN; 
-
+precedence left DOT;
+precedence left OPEN_BRACKET, CLOSE_PAREN;
 precedence nonassoc ELSE;
-precedence nonassoc GREATER_THAN;
-precedence nonassoc LESS_THAN;
 
 /* The grammar rules */
 
-prog ::= fun:f funSeq:fs                   {: fs.add(0, f); RESULT = new Program(fleft, fright, fs); :}
-       ;
+prog ::= defSeq:ds          {: RESULT = new Program(0, 0, ds); :}
+    ;
 
+defSeq ::= def:d defSeq:ds  {: ds.add(0, d); RESULT = ds; :}
+    | /* vazio */           {: RESULT = new ArrayList<Def>(); :}
+    ;
 
-funSeq ::= fun:f funSeq:fs                 {: fs.add(0, f); RESULT = fs; :}
-         | /* vazio */                    {: RESULT = new ArrayList<>(); :}
-         ;
+def ::= fun:f               {: RESULT = f; :}
+      | data_def:d          {: RESULT = d; :}
+      ;
+
+data_def ::= DATA TYID:id OPEN_BRACE decl_list:dl CLOSE_BRACE
+          {: RESULT = new DataDef(idleft, idright, id, dl, false); :}
+        |  ABSTRACT DATA TYID:id OPEN_BRACE decl_list:dl CLOSE_BRACE
+          {: RESULT = new DataDef(idleft, idright, id, dl, true); :}
+        ;
+
+decl_list ::= decl:d decl_list:dl
+           {: dl.add(0, d); RESULT = dl; :}
+           | /* vazio */
+           {: RESULT = new ArrayList<Decl>(); :}
+           ;
+
+decl ::= ID:id DOUBLE_COLON btype:t SEMICOLON
+      {: RESULT = new Decl(idleft, idright, new Var(idleft, idright, id), t); :}
+      ;
 
 fun ::= ID:id OPEN_PAREN params:ps CLOSE_PAREN COLON typeList:rets block:body
-                                          {: RESULT = new FunDef(idleft, idright, id, ps, rets, body); :}
+          {: RESULT = new FunDef(idleft, idright, id, ps, rets, body); :}
        | ID:id OPEN_PAREN params:ps CLOSE_PAREN block:body
-                                          {: RESULT = new FunDef(idleft, idright, id, ps, new ArrayList<CType>(), body); :}
+          {: RESULT = new FunDef(idleft, idright, id, ps, new ArrayList<CType>(), body); :}
        ;
 
 params ::= param:p COMMA params:ps        {: ps.add(0, p); RESULT = ps; :}
@@ -120,24 +141,39 @@ cmdList ::= cmd:c                         {: RESULT = c; :}
        |    cmdList:cl cmd:c              {: RESULT = new CSeq(clleft, clright, cl, c); :}
        ;
 
-cmd ::= block:b                                                              {: RESULT = b; :}   
-       | lvalue:id ASSIGN expr:e SEMICOLON                                   {: RESULT = new CAttr(idleft, idright, id, e); :}
-       | PRINT:p expr:e SEMICOLON                                            {: RESULT = new Print(pleft, pright, e); :}
-       | ITERATE:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c                       {: RESULT = new Loop(ileft, iright, e, c); :}
-       | ITERATE:i OPEN_PAREN lvalue:id COLON expr:e CLOSE_PAREN cmd:c       {: RESULT = new IterateWithVar(ileft, iright, id, e, c); :}
-       | IF:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c1                           {: RESULT = new If(ileft, iright, e, c1, null); :}
-       | IF:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c1 ELSE cmd:c2               {: RESULT = new If(ileft, iright, e, c1, c2); :}
-       | READ:r lvalue:lv SEMICOLON                                          {: RESULT = new Read(rleft, rright, lv); :}
-       | RETURN:r expList:es SEMICOLON                                       {: RESULT = new Return(rleft, rright, es); :}
-       | fcall_expr:fc SEMICOLON                                             {: RESULT = new FCallCommand(fcleft, fcright, fc.getID(), fc.getArgs(), new ArrayList<LValue>()); :}
-       | ID:id OPEN_PAREN expList:args CLOSE_PAREN LESS_THAN lvalueList:lvs GREATER_THAN SEMICOLON 
-                                                                             {: RESULT = new FCallCommand(idleft, idright, id, args, lvs); :}
-       | ID:id OPEN_PAREN CLOSE_PAREN LESS_THAN lvalueList:lvs GREATER_THAN SEMICOLON 
-                                                                             {: RESULT = new FCallCommand(idleft, idright, id, new ArrayList<Exp>(), lvs); :}
+cmd ::= block:b
+          {: RESULT = b; :}
+       | lvalue:id ASSIGN expr:e SEMICOLON
+          {: RESULT = new CAttr(idleft, idright, id, e); :}
+       | PRINT:p expr:e SEMICOLON
+          {: RESULT = new Print(pleft, pright, e); :}
+       | ITERATE:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c
+          {: RESULT = new Loop(ileft, iright, e, c); :}
+       | ITERATE:i OPEN_PAREN lvalue:id COLON expr:e CLOSE_PAREN cmd:c
+          {: RESULT = new IterateWithVar(ileft, iright, id, e, c); :}
+       | IF:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c1
+          {: RESULT = new If(ileft, iright, e, c1, null); :} %prec IF
+       | IF:i OPEN_PAREN expr:e CLOSE_PAREN cmd:c1 ELSE cmd:c2
+          {: RESULT = new If(ileft, iright, e, c1, c2); :}
+       | READ:r lvalue:lv SEMICOLON
+          {: RESULT = new Read(rleft, rright, lv); :}
+       | RETURN:r expList:es SEMICOLON
+          {: RESULT = new Return(rleft, rright, es); :}
+       | fcall_expr:fc SEMICOLON
+          {: RESULT = new FCallCommand(fcleft, fcright, fc.getID(), fc.getArgs(), new ArrayList<LValue>()); :}
+       | ID:id OPEN_PAREN expList:args CLOSE_PAREN LESS_THAN lvalueList:lvs GREATER_THAN SEMICOLON
+          {: RESULT = new FCallCommand(idleft, idright, id, args, lvs); :}
+       | ID:id OPEN_PAREN CLOSE_PAREN LESS_THAN lvalueList:lvs GREATER_THAN SEMICOLON
+          {: RESULT = new FCallCommand(idleft, idright, id, new ArrayList<Exp>(), lvs); :}
        ;
 
-lvalue ::= ID:id                            {: RESULT = new Var(idleft, idright, id);        :}
-       | lvalue:lv OPEN_BRACKET expr:e CLOSE_BRACKET {: RESULT = new ArrayAccess(lvleft, lvright, lv, e); :}
+
+lvalue ::= ID:id
+              {: RESULT = new Var(idleft, idright, id); :}
+       | lvalue:lv OPEN_BRACKET expr:e CLOSE_BRACKET
+              {: RESULT = new ArrayAccess(lvleft, lvright, lv, e); :}
+       | lvalue:lv DOT ID:id 
+              {: RESULT = new DotAccess(idleft, idright, lv, id); :}
        ;
 
 lvalueList ::= lvalue:lv COMMA lvalueList:lvs  {: lvs.add(0, lv); RESULT = lvs; :}
@@ -148,6 +184,7 @@ btype ::= INT_TYPE:t                        {: RESULT = new TyInt(tleft, tright)
        |  FLOAT_TYPE:t                      {: RESULT = new TyFloat(tleft, tright); :}
        |  BOOL_TYPE:t                       {: RESULT = new TyBool(tleft, tright); :}
        |  CHAR_TYPE:t                       {: RESULT = new TyChar(tleft, tright); :}
+       |  TYID:id                           {: RESULT = new TyUser(idleft, idright, id); :} // <-- ADICIONADO
        |  btype:t OPEN_BRACKET CLOSE_BRACKET {: RESULT = new TyArr(tleft, tright, t); :}
        ;
 
@@ -155,34 +192,47 @@ block ::= OPEN_BRACE cmdList:e CLOSE_BRACE  {: RESULT = e; :}
        | OPEN_BRACE  CLOSE_BRACE            {: RESULT = new CNull(0, 0); :}
        ;
 
-expr ::= expr:e1 AND:t expr:e2            {: RESULT = new And(tleft,tright,e1,e2);         :}
-       | expr:e1 PLUS:t expr:e2           {: RESULT = new Plus(tleft,tright,e1,e2);        :}
-       | expr:e1 MULT:t expr:e2           {: RESULT = new Times(tleft,tright,e1,e2);       :}
-       | expr:e1 MINUS:t expr:e2          {: RESULT = new Sub(tleft,tright,e1,e2);         :}
-       | expr:e1 DIV:t expr:e2            {: RESULT = new Div(tleft,tright,e1,e2);         :}
-       | expr:e1 LESS_THAN:t expr:e2      {: RESULT = new LessThan(tleft,tright,e1,e2);    :}
-       | expr:e1 EQUAL_EQUAL:t expr:e2    {: RESULT = new Equal(tleft,tright,e1,e2);       :}
-       | expr:e1 NOT_EQUAL:t expr:e2      {: RESULT = new NotEqual(tleft,tright,e1,e2);    :}
-       | expr:e1 MOD:t expr:e2            {: RESULT = new Mod(tleft,tright,e1,e2);         :}
-       | NOT:t expr:e                     {: RESULT = new Not(tleft, tright, e);           :}
-       | MINUS:t expr:e                   {: RESULT = new UMinus(tleft, tright, e);        :}
-       | OPEN_PAREN expr:e CLOSE_PAREN    {: RESULT = e;                                   :}
-       | INT:n	                     {: RESULT = new IntLit(nleft,nright,n);          :}
-       | FLOAT:n	                     {: RESULT = new FloatLit(nleft,nright,n);        :}
-       | TRUE:n	                     {: RESULT = new BoolLit(nleft,nright,n);         :}
-       | FALSE:n	                     {: RESULT = new BoolLit(nleft,nright,n);         :}
-       | CHAR:c                           {: RESULT = new CharLit(cleft, cright, c);       :}
-       | lvalue:id                        {: RESULT = (Exp)id;                             :}
-       | NULL:n                           {: RESULT = new NullLit(nleft,nright);           :}
-       | ID:id OPEN_PAREN CLOSE_PAREN     {: RESULT = new FCall(idleft, idright, id, new ArrayList<Exp>()); :}
-       | ID:id OPEN_PAREN expList:es CLOSE_PAREN                         
-                                          {: RESULT = new FCall(idleft, idright, id, es); :}
-       | ID:id OPEN_PAREN CLOSE_PAREN OPEN_BRACKET expr:idx CLOSE_BRACKET 
-                                          {: RESULT = new FCall(idleft, idright, id, new ArrayList<Exp>(), idx); :}
-       | ID:id OPEN_PAREN expList:es CLOSE_PAREN OPEN_BRACKET expr:idx CLOSE_BRACKET 
-                                          {: RESULT = new FCall(idleft, idright, id, es, idx); :}
-       | NEW:n btype:t OPEN_BRACKET expr:e CLOSE_BRACKET {: RESULT = new NewArray(nleft, nright, t, e); :}
+expr ::= expr:e1 AND:t expr:e2            {: RESULT = new And(tleft,tright,e1,e2); :}
+       | expr:e1 PLUS:t expr:e2           {: RESULT = new Plus(tleft,tright,e1,e2); :}
+       | expr:e1 MULT:t expr:e2           {: RESULT = new Times(tleft,tright,e1,e2); :}
+       | expr:e1 MINUS:t expr:e2          {: RESULT = new Sub(tleft,tright,e1,e2); :}
+       | expr:e1 DIV:t expr:e2            {: RESULT = new Div(tleft,tright,e1,e2); :}
+       | expr:e1 LESS_THAN:t expr:e2      {: RESULT = new LessThan(tleft,tright,e1,e2); :}
+       | expr:e1 EQUAL_EQUAL:t expr:e2    {: RESULT = new Equal(tleft,tright,e1,e2); :}
+       | expr:e1 NOT_EQUAL:t expr:e2      {: RESULT = new NotEqual(tleft,tright,e1,e2); :}
+       | expr:e1 MOD:t expr:e2            {: RESULT = new Mod(tleft,tright,e1,e2); :}
+       | NOT:t expr:e                     {: RESULT = new Not(tleft, tright, e); :}
+       | MINUS:t expr:e                   {: RESULT = new UMinus(tleft, tright, e); :}
+       | OPEN_PAREN expr:e CLOSE_PAREN    {: RESULT = e; :}
+       | INT:n	                          {: RESULT = new IntLit(nleft,nright,n); :}
+       | FLOAT:n	                          {: RESULT = new FloatLit(nleft,nright,n); :}
+       | TRUE:n	                          {: RESULT = new BoolLit(nleft,nright,n); :}
+       | FALSE:n	                          {: RESULT = new BoolLit(nleft,nright,n); :}
+       | CHAR:c                           {: RESULT = new CharLit(cleft, cright, c); :}
+       | lvalue:id                        {: RESULT = (Exp)id; :}
+       | NULL:n                           {: RESULT = new NullLit(nleft,nright); :}
+       | fcall_expr:fc                    {: RESULT = fc; :} // <-- fcall_expr usado aqui
+       | fcall_expr:fc OPEN_BRACKET expr:idx CLOSE_BRACKET
+                                          {: RESULT = new FCall(fcleft, fcright, fc.getID(), fc.getArgs(), idx); :}
+       | NEW btype:t optional_size:e
+          {:
+             if (e != null) {
+                RESULT = new NewArray(tleft, tright, t, e);
+             } else {
+                if (t instanceof TyUser) {
+                   RESULT = new NewObject(tleft, tright, (TyUser)t); // <-- MUDANÇA AQUI
+                } else {
+                   RESULT = new NullLit(tleft, tright); // Mantém placeholder
+                }
+             }
+          :}
        ;
+
+optional_size ::= OPEN_BRACKET expr:e CLOSE_BRACKET
+                    {: RESULT = e; :}
+                | /* empty */
+                    {: RESULT = null; :}
+                ;
 
 expList ::= expr:e COMMA expList:es        {: es.add(0, e); RESULT = es; :}
         | expr:e                           {: ArrayList<Exp> list = new ArrayList<>(); list.add(e); RESULT = list; :}
@@ -192,17 +242,8 @@ typeList ::= btype:t COMMA typeList:ts    {: ts.add(0, t); RESULT = ts; :}
            | btype:t                      {: ArrayList<CType> list = new ArrayList<>(); list.add(t); RESULT = list; :}
            ;
 
-fcall_expr ::= ID:id OPEN_PAREN CLOSE_PAREN     {: RESULT = new FCall(idleft, idright, id, new ArrayList<Exp>()); :}
+fcall_expr ::= ID:id OPEN_PAREN CLOSE_PAREN
+               {: RESULT = new FCall(idleft, idright, id, new ArrayList<Exp>()); :}
              | ID:id OPEN_PAREN expList:es CLOSE_PAREN
-                                                {: RESULT = new FCall(idleft, idright, id, es); :}
+               {: RESULT = new FCall(idleft, idright, id, es); :}
              ;
-
-/*op ::= AND:
-       | LESS_THAN
-       | EQUAL_EQUAL
-       | NOT_EQUAL
-       | PLUS
-       | MINUS
-       | MULT
-       | DIV
-       | MOD */
