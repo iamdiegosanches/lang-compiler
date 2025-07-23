@@ -6,7 +6,7 @@ import lang.nodes.types.CType;
 import java.util.ArrayList;
 import lang.nodes.LangVisitor;
 
-public class FunDef extends CNode{
+public class FunDef extends Def{
 
     private String fname;
     private ArrayList<Bind> params;

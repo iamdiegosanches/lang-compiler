@@ -721,5 +721,23 @@ public class InterpVisitor extends LangVisitor {
         stk.push(array[index]);
     }
 
+    @Override
+    public void visit(DataDef d) {
+        // A definição de um tipo não tem ação durante a interpretação.
+        // Portanto, este método pode ficar vazio.
+    }
+
+    @Override
+    public void visit(Decl d) {
+        // A declaração de um atributo dentro de um 'data' também não
+        // tem ação direta na interpretação.
+    }
+    
+    @Override
+    public void visit(TyUser t) {
+        // Um tipo de usuário não é uma expressão executável,
+        // então não faz nada aqui.
+    }
+
 
 }

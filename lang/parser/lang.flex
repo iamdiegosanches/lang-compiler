@@ -71,7 +71,7 @@ import java_cup.runtime.Symbol;
 %}
 
 ID    = [a-z][a-zA-Z0-9_]*
-//TYID  = [A-Z][a-zA-Z0-9_]*
+TYID  = [A-Z][a-zA-Z0-9_]*
 INT   = [0-9]+
 FLOAT = (([0-9]+\.[0-9]+)|(\.[0-9]+))
 CHAR  = \'([^\\'\n\r]|\\[nrtb'\\]|\\[0-9]{3})\' 
@@ -85,8 +85,8 @@ CHAR  = \'([^\\'\n\r]|\\[nrtb'\\]|\\[0-9]{3})\'
     "true"      { return new Symbol(LangParserSym.TRUE, yyline + 1, yycolumn + 1, true); }
     "false"     { return new Symbol(LangParserSym.FALSE, yyline + 1, yycolumn + 1, false); }
 
-//    "data"      { return new Symbol(LangParserSym.DATA, yyline + 1, yycolumn + 1); }
-//    "abstract"  { return new Symbol(LangParserSym.ABSTRACT, yyline + 1, yycolumn + 1); }
+    "data"      { return new Symbol(LangParserSym.DATA, yyline + 1, yycolumn + 1); }
+    "abstract"  { return new Symbol(LangParserSym.ABSTRACT, yyline + 1, yycolumn + 1); }
     "if"        { return new Symbol(LangParserSym.IF, yyline + 1, yycolumn + 1); }
     "else"      { return new Symbol(LangParserSym.ELSE, yyline + 1, yycolumn + 1); }
     "return"    { return new Symbol(LangParserSym.RETURN, yyline + 1, yycolumn + 1); }
@@ -103,7 +103,7 @@ CHAR  = \'([^\\'\n\r]|\\[nrtb'\\]|\\[0-9]{3})\'
     ":"         { return new Symbol(LangParserSym.COLON, yyline + 1, yycolumn + 1); }
     ";"         { return new Symbol(LangParserSym.SEMICOLON, yyline + 1, yycolumn + 1); }
     ","         { return new Symbol(LangParserSym.COMMA, yyline + 1, yycolumn + 1); }
-//    "."         { return new Symbol(LangParserSym.DOT, yyline + 1, yycolumn + 1); }
+    "."         { return new Symbol(LangParserSym.DOT, yyline + 1, yycolumn + 1); }
     "="         { return new Symbol(LangParserSym.ASSIGN, yyline + 1, yycolumn + 1); }
     "+"         { return new Symbol(LangParserSym.PLUS, yyline + 1, yycolumn + 1); }
     "-"         { return new Symbol(LangParserSym.MINUS, yyline + 1, yycolumn + 1); }
@@ -142,7 +142,7 @@ CHAR  = \'([^\\'\n\r]|\\[nrtb'\\]|\\[0-9]{3})\'
 
 
     {ID}        { return new Symbol(LangParserSym.ID, yyline + 1, yycolumn + 1, yytext()); }
-//    {TYID}      { return new Symbol(LangParserSym.TYID, yyline + 1, yycolumn + 1, yytext()); }
+    {TYID}      { return new Symbol(LangParserSym.TYID, yyline + 1, yycolumn + 1, yytext()); }
 
     "--".* { /* ignora */ }
     "{-" { commentLevel = 1; yybegin(Comment); }

@@ -57,5 +57,9 @@ public class SimpleVisitor extends LangVisitor{
     public void visit(TyBool t) { }
     public void visit(TyInt t) { }
     public void visit(TyFloat t) { }
+    public void visit(DataDef d) { }
+    public void visit(Decl d) { }
+    public void visit(TyUser t) { }
+
 
 }

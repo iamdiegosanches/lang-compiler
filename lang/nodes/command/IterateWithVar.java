@@ -3,13 +3,12 @@ package lang.nodes.command;
 import lang.nodes.CNode;
 import lang.nodes.expr.Exp;
 import lang.nodes.expr.LValue;
-import lang.nodes.expr.Var;
 import lang.nodes.LangVisitor;
 
 public class IterateWithVar extends CNode {
 
     private LValue iterVar;
-    private Exp condExp; // A expressão que define a iteração (int ou array)
+    private Exp condExp;
     private CNode body;
 
     public IterateWithVar(int l, int c, LValue iterVar, Exp condExp, CNode body) {
