@@ -58,13 +58,13 @@ import java_cup.runtime.Symbol;
     }
 
     private char ascIIToChar(String s) {
-        String octalValue = s.substring(2, s.length() - 1);
+        String decimalValue = s.substring(2, s.length() - 1); 
         try {
-            int decimal = Integer.parseInt(octalValue, 8);
+            int decimal = Integer.parseInt(decimalValue, 10);
             return (char) decimal;
         } catch (NumberFormatException e) {
-            throw new Error("Erro ao converter o valor octal '" + s + "' em um caractere ASCII.");
-        } 
+            throw new Error("Erro ao converter o valor decimal '" + s + "' em um caractere ASCII.");
+        }
     }
 
     private int commentLevel = 0;

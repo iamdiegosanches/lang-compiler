@@ -192,7 +192,7 @@ public class InterpVisitor extends LangVisitor {
                 int count = (Integer) iterSource;
                 if (count > 0) {
                     for (int i = 0; i < count; i++) {
-                        store(varName, count - i);
+                        store(varName, i);
                         d.getBody().accept(this);
                         if (retMode) {
                             break;
@@ -255,48 +255,53 @@ public class InterpVisitor extends LangVisitor {
         }
 
         LValue lv = d.getTarget();
-        Object currentValue;
-
-        lv.accept(this);
-        currentValue = stk.pop();
-
-        if (currentValue == null) {
-            throw new RuntimeException("Erro em read (" + d.getLine() + "," + d.getCol() + "): Não é possível ler para uma variável não inicializada ou nula.");
-        }
-
-        System.out.print("> ");
         String input = scanner.nextLine();
-        Object newValue;
+        Object newValue = null;
 
+        // Tenta inferir o tipo a partir da entrada do usuário,
+        // já que a variável pode não ter sido declarada/inicializada.
+
+        // 1. Tenta como Integer
         try {
-            if (currentValue instanceof Integer) {
-                newValue = Integer.parseInt(input);
-            } else if (currentValue instanceof Float) {
+            newValue = Integer.parseInt(input);
+        } catch (NumberFormatException e1) {
+            // 2. Se falhar, tenta como Float
+            try {
                 newValue = Float.parseFloat(input);
-            } else if (currentValue instanceof Boolean) {
-                if ("true".equals(input)) newValue = true;
-                else if ("false".equals(input)) newValue = false;
-                else throw new NumberFormatException();
-            } else if (currentValue instanceof Character) {
-                if (input.length() == 1) newValue = input.charAt(0);
-                else throw new NumberFormatException();
-            } else {
-                throw new RuntimeException("Tipo do alvo não suportado pelo comando read.");
+            } catch (NumberFormatException e2) {
+                // 3. Se falhar, tenta como Boolean
+                if ("true".equalsIgnoreCase(input)) {
+                    newValue = true;
+                } else if ("false".equalsIgnoreCase(input)) {
+                    newValue = false;
+                } else {
+                    // 4. Se falhar, tenta como Char (se tiver apenas um caractere)
+                    if (input.length() == 1) {
+                        newValue = input.charAt(0);
+                    } else {
+                        // 5. Se tudo falhar, lança um erro.
+                        throw new RuntimeException("Erro em read (" + d.getLine() + "," + d.getCol() + "): A entrada '" + input + "' não corresponde a nenhum tipo primitivo válido (Int, Float, Bool, Char).");
+                    }
+                }
             }
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("Erro em read (" + d.getLine() + "," + d.getCol() + "): A entrada '" + input + "' é inválida para o tipo esperado.");
         }
 
+        // Armazena o novo valor
         if (lv instanceof Var) {
             store(((Var) lv).getName(), newValue);
         } else if (lv instanceof ArrayAccess) {
             ArrayAccess arrayAccess = (ArrayAccess) lv;
             
+            // Avalia o array e o índice para a atribuição
             arrayAccess.getArrayVar().accept(this);
             Object[] array = (Object[]) stk.pop();
-
+            
             arrayAccess.getIndexExp().accept(this);
             int index = (Integer) stk.pop();
+
+            if (index < 0 || index >= array.length) {
+                throw new RuntimeException("Erro de execução (" + d.getLine() + "," + d.getCol() + "): Índice de array fora dos limites.");
+            }
             
             array[index] = newValue;
         }
@@ -512,12 +517,7 @@ public class InterpVisitor extends LangVisitor {
     }
 
     public void visit(Var e) {
-        Object val = read(e.getName());
-        if (val != null) {
-            stk.push(val);
-        } else {
-            throw new RuntimeException("Variável não declarada " + e.getLine() + ", " + e.getCol() + " : " + e.getName());
-        }
+        stk.push(read(e.getName()));
     }
 
     @Override

@@ -89,6 +89,7 @@ precedence left CLOSE_PAREN;
 
 precedence nonassoc ELSE;
 precedence nonassoc GREATER_THAN;
+precedence nonassoc LESS_THAN;
 
 /* The grammar rules */
 
