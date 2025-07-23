@@ -169,14 +169,11 @@ cmd ::= block:b
 
 
 lvalue ::= ID:id
-          {: RESULT = new Var(idleft, idright, id); :}
+              {: RESULT = new Var(idleft, idright, id); :}
        | lvalue:lv OPEN_BRACKET expr:e CLOSE_BRACKET
-          {: RESULT = new ArrayAccess(lvleft, lvright, lv, e); :}
+              {: RESULT = new ArrayAccess(lvleft, lvright, lv, e); :}
        | lvalue:lv DOT ID:id 
-              {: // TODO: Criar o nó AST DotAccess.java para substituir o placeholder.
-             // Por enquanto, isso permite que o parser funcione.
-             RESULT = new Var(idleft, idright, lv.getName() + "." + id); // Placeholder
-              :}
+              {: RESULT = new DotAccess(idleft, idright, lv, id); :}
        ;
 
 lvalueList ::= lvalue:lv COMMA lvalueList:lvs  {: lvs.add(0, lv); RESULT = lvs; :}
@@ -220,13 +217,13 @@ expr ::= expr:e1 AND:t expr:e2            {: RESULT = new And(tleft,tright,e1,e2
        | NEW btype:t optional_size:e
           {:
              if (e != null) {
-                // Caso: new Int[10] ou new Ponto[]
                 RESULT = new NewArray(tleft, tright, t, e);
              } else {
-                // Caso: new Ponto ou new Int
-                // TODO: Criar o nó AST NewObject.java para isso.
-                // Por enquanto, usaremos NullLit como placeholder para compilar.
-                RESULT = new NullLit(tleft, tright);
+                if (t instanceof TyUser) {
+                   RESULT = new NewObject(tleft, tright, (TyUser)t); // <-- MUDANÇA AQUI
+                } else {
+                   RESULT = new NullLit(tleft, tright); // Mantém placeholder
+                }
              }
           :}
        ;

@@ -47,6 +47,8 @@ public abstract class LangVisitor{
     public abstract void visit(FloatLit e);
     public abstract void visit(NewArray e);
     public abstract void visit(ArrayAccess e);
+    public abstract void visit(NewObject e);
+    public abstract void visit(DotAccess e);
 
     public abstract void visit(TyUser t);
     public abstract void visit(TyChar t);
