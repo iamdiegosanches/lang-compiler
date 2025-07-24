@@ -50,18 +50,6 @@ public class LangCompiler {
             }
       }
 
-      public static void interpretDebug(LangParser p) throws IOException, Exception {
-            Symbol presult = p.parse();
-            CNode root = (CNode) presult.value;
-            if (root != null) {
-                  InterpVisitor v = new InterpVisitor();
-                  root.accept(v);
-
-            } else {
-                  System.out.println("root was null !");
-            }
-      }
-
       public static void runSyntaxCheck(LangParser p) {
         try {
             p.parse();
@@ -99,9 +87,6 @@ public class LangCompiler {
                   }
                   else if (args.length == 2 && args[0].equals("-i")) {
                         interpret(p);
-                        System.exit(0);
-                  } else if (args.length == 2 && args[0].equals("-id")) {
-                        interpretDebug(p);
                         System.exit(0);
                   } else if(args.length == 2 && args[0].equals("-syn")){
                         runSyntaxCheck(p);

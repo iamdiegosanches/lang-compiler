@@ -12,14 +12,14 @@ import lang.nodes.*;
 
 import java.util.Stack;
 import java.util.Hashtable;
-import java.util.HashMap; // <-- Import HashMap
-import java.util.Map;     // <-- Import Map
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.Scanner;
 
 public class InterpVisitor extends LangVisitor {
 
-    private Stack<HashMap<String, Object>> env; // <-- Alterado para HashMap
+    private Stack<HashMap<String, Object>> env;
     private Hashtable <String, DataDef> typeCtx;
     private Stack < Object > stk;
     private Hashtable < String, FunDef > fn;
@@ -35,11 +35,11 @@ public class InterpVisitor extends LangVisitor {
         retMode = false;
         returnValue = null;
         env = new Stack<>();
-        env.push(new HashMap<String, Object>()); // Escopo global com HashMap
+        env.push(new HashMap<String, Object>());
     }
 
     private void enterScope() {
-        env.push(new HashMap<String, Object>()); // Novo escopo com HashMap
+        env.push(new HashMap<String, Object>());
     }
 
     private void leaveScope() {
@@ -48,7 +48,7 @@ public class InterpVisitor extends LangVisitor {
 
     private void store(String name, Object value) {
         for (int i = env.size() - 1; i >= 0; i--) {
-            HashMap<String, Object> scope = env.get(i); // <-- Alterado para HashMap
+            HashMap<String, Object> scope = env.get(i);
             if (scope == null) {
                 throw new RuntimeException("Erro interno: Escopo nulo encontrado na pilha de ambientes em índice " + i + ". Isso não deveria acontecer.");
             }
@@ -62,8 +62,8 @@ public class InterpVisitor extends LangVisitor {
 
     private Object read(String name) {
         for (int i = env.size() - 1; i >= 0; i--) {
-            HashMap<String, Object> scope = env.get(i); // <-- Alterado para HashMap
-            if (scope == null) { // Verificação defensiva
+            HashMap<String, Object> scope = env.get(i);
+            if (scope == null) {
                 throw new RuntimeException("Erro interno: Escopo nulo encontrado na pilha de ambientes ao ler variável.");
             }
             if (scope.containsKey(name)) {
@@ -166,11 +166,11 @@ public class InterpVisitor extends LangVisitor {
             if (recordInstance == null) {
                 throw new RuntimeException("Erro de execução (" + d.getLine() + "," + d.getCol() + "): Tentativa de atribuir a um atributo de uma referência nula.");
             }
-            if (!(recordInstance instanceof Map)) { // <-- Alterado para Map
+            if (!(recordInstance instanceof Map)) {
                 throw new RuntimeException("Erro de execução (" + d.getLine() + "," + d.getCol() + "): Tentativa de atribuir a um atributo de algo que não é um objeto.");
             }
 
-            Map<String, Object> instanceMap = (Map<String, Object>) recordInstance; // <-- Alterado para Map
+            Map<String, Object> instanceMap = (Map<String, Object>) recordInstance;
             instanceMap.put(dot.getFieldName(), value);
         }
     }
@@ -344,64 +344,79 @@ public class InterpVisitor extends LangVisitor {
     public void visit(Sub e) {
         e.getLeft().accept(this);
         e.getRight().accept(this);
-
         Object right = stk.pop();
         Object left = stk.pop();
 
-        if (left instanceof Integer && right instanceof Integer) {
-            stk.push((Integer)left - (Integer)right);
-        } else if (left instanceof Float && right instanceof Float) {
-            stk.push((Float)left - (Float)right);
+        if (left instanceof Number && right instanceof Number) {
+            if (left instanceof Float || right instanceof Float) {
+                stk.push(((Number)left).floatValue() - ((Number)right).floatValue());
+            } else {
+                stk.push(((Number)left).intValue() - ((Number)right).intValue());
+            }
         } else {
-            throw new RuntimeException("Operação não permitida entre os tipos " + e.getLine() + ", " + e.getCol() + ".");
+            String lType = (left == null) ? "null" : left.getClass().getSimpleName();
+            String rType = (right == null) ? "null" : right.getClass().getSimpleName();
+            throw new RuntimeException("Operação '-' não permitida entre os tipos " + lType + " e " + rType + " em (" + e.getLine() + ", " + e.getCol() + ").");
         }
     }
 
     public void visit(Plus e) {
         e.getLeft().accept(this);
         e.getRight().accept(this);
-
         Object right = stk.pop();
         Object left = stk.pop();
 
-        if (left instanceof Integer && right instanceof Integer) {
-            stk.push((Integer)left + (Integer)right);
-        } else if (left instanceof Float && right instanceof Float) {
-            stk.push((Float)left + (Float)right);
+        if (left instanceof Number && right instanceof Number) {
+            if (left instanceof Float || right instanceof Float) {
+                stk.push(((Number)left).floatValue() + ((Number)right).floatValue());
+            } else {
+                stk.push(((Number)left).intValue() + ((Number)right).intValue());
+            }
         } else {
-            throw new RuntimeException("Operação não permitida entre os tipos " + e.getLine() + ", " + e.getCol() + ".");
+            String lType = (left == null) ? "null" : left.getClass().getSimpleName();
+            String rType = (right == null) ? "null" : right.getClass().getSimpleName();
+            throw new RuntimeException("Operação '+' não permitida entre os tipos " + lType + " e " + rType + " em (" + e.getLine() + ", " + e.getCol() + ").");
         }
     }
 
     public void visit(Times e) {
         e.getLeft().accept(this);
         e.getRight().accept(this);
-
         Object right = stk.pop();
         Object left = stk.pop();
 
-        if (left instanceof Integer && right instanceof Integer) {
-            stk.push((Integer)left * (Integer)right);
-        } else if (left instanceof Float && right instanceof Float) {
-            stk.push((Float)left * (Float)right);
+        if (left instanceof Number && right instanceof Number) {
+            if (left instanceof Float || right instanceof Float) {
+                stk.push(((Number)left).floatValue() * ((Number)right).floatValue());
+            } else {
+                stk.push(((Number)left).intValue() * ((Number)right).intValue());
+            }
         } else {
-            throw new RuntimeException("Operação não permitida entre os tipos " + e.getLine() + ", " + e.getCol() + ".");
+            String lType = (left == null) ? "null" : left.getClass().getSimpleName();
+            String rType = (right == null) ? "null" : right.getClass().getSimpleName();
+            throw new RuntimeException("Operação '*' não permitida entre os tipos " + lType + " e " + rType + " em (" + e.getLine() + ", " + e.getCol() + ").");
         }
     }
 
     public void visit(Div e) {
         e.getLeft().accept(this);
         e.getRight().accept(this);
-
         Object right = stk.pop();
         Object left = stk.pop();
 
-        if (left instanceof Integer && right instanceof Integer) {
-            stk.push((Integer)left / (Integer)right);
-        } else if (left instanceof Float && right instanceof Float) {
-            stk.push((Float)left / (Float)right);
+        if (left instanceof Number && right instanceof Number) {
+            if (right instanceof Integer && ((Integer)right) == 0 || right instanceof Float && ((Float)right) == 0.0f) {
+                throw new RuntimeException("Erro de execução (" + e.getLine() + ", " + e.getCol() + "): Divisão por zero.");
+            }
+            if (left instanceof Float || right instanceof Float) {
+                stk.push(((Number)left).floatValue() / ((Number)right).floatValue());
+            } else {
+                stk.push(((Number)left).intValue() / ((Number)right).intValue());
+            }
         } else {
-            throw new RuntimeException("Operação não permitida entre os tipos " + e.getLine() + ", " + e.getCol() + ".");
+            String lType = (left == null) ? "null" : left.getClass().getSimpleName();
+            String rType = (right == null) ? "null" : right.getClass().getSimpleName();
+            throw new RuntimeException("Operação '/' não permitida entre os tipos " + lType + " e " + rType + " em (" + e.getLine() + ", " + e.getCol() + ").");
         }
     }
 
@@ -667,7 +682,7 @@ public class InterpVisitor extends LangVisitor {
         if (typeDef == null) {
             throw new RuntimeException("Erro de execução (" + e.getLine() + "," + e.getCol() + "): Tipo '" + typeName + "' não definido.");
         }
-        HashMap<String, Object> newInstance = new HashMap<>(); // <-- Alterado para HashMap
+        HashMap<String, Object> newInstance = new HashMap<>();
         for (Decl attr : typeDef.getAttributes()) {
             newInstance.put(attr.getVar().getName(), getDefaultValue(attr.getType()));
         }
@@ -684,7 +699,7 @@ public class InterpVisitor extends LangVisitor {
         if (!(recordInstance instanceof Map)) { // <-- Alterado para Map
             throw new RuntimeException("Erro de execução (" + e.getLine() + "," + e.getCol() + "): Tentativa de acesso a atributo em algo que não é um objeto.");
         }
-        Map<String, Object> instanceMap = (Map<String, Object>) recordInstance; // <-- Alterado para Map
+        Map<String, Object> instanceMap = (Map<String, Object>) recordInstance;
         String fieldName = e.getFieldName();
         if (!instanceMap.containsKey(fieldName)) {
             throw new RuntimeException("Erro de execução (" + e.getLine() + "," + e.getCol() + "): Objeto não possui o atributo '" + fieldName + "'.");

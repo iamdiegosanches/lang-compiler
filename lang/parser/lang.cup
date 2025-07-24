@@ -74,7 +74,6 @@ non terminal ArrayList<Bind>   params;
 non terminal ArrayList<Exp>    expList;
 non terminal ArrayList<LValue> lvalueList;
 non terminal ArrayList<CType>  typeList;
-non terminal ArrayList<FunDef> funSeq;
 
 /*
   Precedencia e associatividade dos operadores.
