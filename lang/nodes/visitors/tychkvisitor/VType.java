@@ -4,12 +4,6 @@
 ///////////////////////////////////////////////////////////////////////
 package lang.nodes.visitors.tychkvisitor;
 
-import lang.nodes.decl.*;
-import lang.nodes.expr.*;
-import lang.nodes.command.*;
-import lang.nodes.types.*;
-import lang.nodes.*;
-import lang.nodes.LangVisitor;
 
 public abstract  class VType {
      public short type;
