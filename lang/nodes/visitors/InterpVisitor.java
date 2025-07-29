@@ -78,16 +78,11 @@ public class InterpVisitor extends LangVisitor {
     }
 
     public void visit(Program p) {
+        FunDef start = null;
         for (Def d : p.getDefs()) {
             if (d instanceof DataDef) {
-                d.accept(this);
-            }
-        }
-
-        FunDef start = null;
-
-        for (Def d : p.getDefs()) {
-            if (d instanceof FunDef) {
+                d.accept(this); 
+            } else if (d instanceof FunDef) {
                 FunDef f = (FunDef) d;
                 fn.put(f.getFname(), f);
                 if (f.getFname().equals("main")) {
@@ -95,10 +90,11 @@ public class InterpVisitor extends LangVisitor {
                 }
             }
         }
+        
         if (start != null) {
             start.getBody().accept(this);
         } else {
-            throw new RuntimeException("Erro: Função 'main' não encontrada.");
+            throw new RuntimeException("Erro: Não há uma função 'main' no programa.");
         }
     }
 
@@ -673,6 +669,12 @@ public class InterpVisitor extends LangVisitor {
     @Override
     public void visit(DataDef d) {
         typeCtx.put(d.getTypeName(), d);
+
+        if (d.getFunctions() != null) {
+            for (FunDef f : d.getFunctions()) {
+                fn.put(f.getFname(), f);
+            }
+        }
     }
 
     @Override

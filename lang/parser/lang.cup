@@ -67,7 +67,8 @@ non terminal ArrayList<Def>  defSeq;
 
 non terminal DataDef         data_def;
 non terminal Decl            decl;
-non terminal ArrayList<Decl> decl_list;
+non terminal ArrayList<Object> data_body_list;
+non terminal Object          data_item;  
 non terminal Exp             optional_size;
 
 non terminal ArrayList<Bind>   params;
@@ -105,17 +106,37 @@ def ::= fun:f               {: RESULT = f; :}
       | data_def:d          {: RESULT = d; :}
       ;
 
-data_def ::= DATA TYID:id OPEN_BRACE decl_list:dl CLOSE_BRACE
-          {: RESULT = new DataDef(idleft, idright, id, dl, false); :}
-        |  ABSTRACT DATA TYID:id OPEN_BRACE decl_list:dl CLOSE_BRACE
-          {: RESULT = new DataDef(idleft, idright, id, dl, true); :}
+data_def ::= DATA TYID:id OPEN_BRACE data_body_list:dbl CLOSE_BRACE
+          {:
+             ArrayList<Decl> attributes = new ArrayList<>();
+             ArrayList<FunDef> functions = new ArrayList<>();
+             for (Object item : dbl) {
+                 if (item instanceof Decl) { attributes.add((Decl) item); }
+                 else if (item instanceof FunDef) { functions.add((FunDef) item); }
+             }
+             RESULT = new DataDef(idleft, idright, id, attributes, functions, false);
+          :}
+        |  ABSTRACT DATA TYID:id OPEN_BRACE data_body_list:dbl CLOSE_BRACE
+          {:
+             ArrayList<Decl> attributes = new ArrayList<>();
+             ArrayList<FunDef> functions = new ArrayList<>();
+             for (Object item : dbl) {
+                 if (item instanceof Decl) { attributes.add((Decl) item); }
+                 else if (item instanceof FunDef) { functions.add((FunDef) item); }
+             }
+             RESULT = new DataDef(idleft, idright, id, attributes, functions, true);
+          :}
         ;
 
-decl_list ::= decl:d decl_list:dl
-           {: dl.add(0, d); RESULT = dl; :}
-           | /* vazio */
-           {: RESULT = new ArrayList<Decl>(); :}
-           ;
+data_body_list ::= data_item:i data_body_list:dl
+                 {: dl.add(0, i); RESULT = dl; :}
+               | /* vazio */
+                 {: RESULT = new ArrayList<Object>(); :}
+               ;
+
+data_item ::= decl:d    {: RESULT = d; :}
+            | fun:f     {: RESULT = f; :}
+            ;
 
 decl ::= ID:id DOUBLE_COLON btype:t SEMICOLON
       {: RESULT = new Decl(idleft, idright, new Var(idleft, idright, id), t); :}
