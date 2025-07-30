@@ -698,7 +698,7 @@ public class InterpVisitor extends LangVisitor {
         if (recordInstance == null) {
             throw new RuntimeException("Erro de execução (" + e.getLine() + "," + e.getCol() + "): Tentativa de acessar o atributo '" + e.getFieldName() + "' em uma referência nula.");
         }
-        if (!(recordInstance instanceof Map)) { // <-- Alterado para Map
+        if (!(recordInstance instanceof Map)) { 
             throw new RuntimeException("Erro de execução (" + e.getLine() + "," + e.getCol() + "): Tentativa de acesso a atributo em algo que não é um objeto.");
         }
         Map<String, Object> instanceMap = (Map<String, Object>) recordInstance;

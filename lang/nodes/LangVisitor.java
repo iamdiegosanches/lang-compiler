@@ -15,8 +15,8 @@ public abstract class LangVisitor{
     public abstract void visit(Program p);
 
     public abstract void visit(FunDef d);
-    public abstract void visit(DataDef d); // <-- NOVO
-    public abstract void visit(Decl d);    // <-- NOVO
+    public abstract void visit(DataDef d);
+    public abstract void visit(Decl d);
     public abstract void visit(Bind  d);
 
     public abstract void visit(CSeq d);

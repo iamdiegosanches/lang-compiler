@@ -6,20 +6,19 @@
 package lang.nodes;
 
 import java.util.ArrayList;
-import lang.nodes.decl.Def; // <-- MUDANÇA AQUI
+import lang.nodes.decl.Def; 
 import lang.nodes.decl.FunDef;
 
 public class Program extends CNode {
-    private ArrayList<Def> defs; // <-- MUDANÇA AQUI (de FunDef para Def)
+    private ArrayList<Def> defs; 
 
-    public Program(int l, int c, ArrayList<Def> ds) { // <-- MUDANÇA AQUI
+    public Program(int l, int c, ArrayList<Def> ds) { 
         super(l, c);
         this.defs = ds;
     }
 
-    public ArrayList<Def> getDefs() { return defs; } // <-- MUDANÇA AQUI
+    public ArrayList<Def> getDefs() { return defs; } 
 
-    // Opcional: manter getFuncs por compatibilidade ou remover
     public ArrayList<FunDef> getFuncs() {
         ArrayList<FunDef> funcs = new ArrayList<>();
         for (Def d : defs) {

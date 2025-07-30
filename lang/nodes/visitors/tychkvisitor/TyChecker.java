@@ -136,7 +136,7 @@ public class TyChecker extends LangVisitor {
                 funcTypesArray[i + paramTypes.size()] = returnTypes.get(i);
             }
             
-            e.ty = new VTyFuncProper(paramTypes, returnTypes); // <--- ASSUMIMOS QUE VTyFuncProper FOI CRIADA
+            e.ty = new VTyFuncProper(paramTypes, returnTypes); 
 
             if (ctx.containsKey(f.getFname())) {
                  throw new RuntimeException("Erro Semântico (" + f.getLine() + ", " + f.getCol() + "): Função '" + f.getFname() + "' já declarada.");
