@@ -7,8 +7,8 @@ package lang.nodes.expr;
 import lang.nodes.LangVisitor;
 
 public class ArrayAccess extends Exp implements LValue {
-    private LValue arrayVar; // A variável do vetor (ex: 'meuArray')
-    private Exp indexExp;   // A expressão do índice (ex: '0', 'i+1')
+    private LValue arrayVar;
+    private Exp indexExp;
 
     public ArrayAccess(int line, int col, LValue arrayVar, Exp indexExp) {
         super(line, col);
