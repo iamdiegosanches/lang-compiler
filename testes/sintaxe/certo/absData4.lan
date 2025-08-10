@@ -1,0 +1,9 @@
+
+abstract data Vazio {
+
+}
+
+
+main() {
+   v = new Vazio;
+}

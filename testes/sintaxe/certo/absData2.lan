@@ -1,0 +1,11 @@
+
+abstract data None {
+
+   none() : None{
+       n = new None;
+   }
+}
+
+main() {
+   p = none()[0];
+}

@@ -1,0 +1,13 @@
+
+abstract data Ponto {
+     x :: Int;
+
+     y :: Int;
+
+
+    main() {
+        p = new Ponto;
+        p.x = 0;
+        p.y = 0;
+    }
+}

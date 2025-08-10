@@ -4,7 +4,8 @@ fn() : Int,Char {
 
 
 main() {
-    x = fn()[2];
+    x = fn()[2];   -- Note que a função só retorna dois valores
+                   -- Não existe fn()[2]
     y = fn()[0];
     z = fn()[1];
     print x;
@@ -14,3 +15,4 @@ main() {
     print z;
     print '\n';
 }
+

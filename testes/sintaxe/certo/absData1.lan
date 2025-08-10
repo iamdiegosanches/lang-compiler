@@ -1,0 +1,25 @@
+
+abstract data Ponto {
+     x :: Int;
+
+     deslocX(d :: Int , p :: Ponto){
+         p.x = p.x + d;
+     }
+
+     deslocY(d :: Int , p :: Ponto ){
+         p.y = p.y + d;
+     }
+
+     criaPonto( x :: Int, y :: Int) : Ponto{
+         p = new Ponto;
+         p.x = x;
+         p.y = y;
+         return p;
+     }
+
+     y :: Int;
+}
+
+main() {
+   p = criaPonto(0,0)[0];
+}

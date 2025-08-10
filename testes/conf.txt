@@ -1,0 +1,3 @@
+java -cp ..:../lang/tools/java-cup-11b-runtime.jar lang/LangCompiler -syn
+java -cp ..:../lang/tools/java-cup-11b-runtime.jar lang/LangCompiler -i
+java -cp ..:../lang/tools/java-cup-11b-runtime.jar lang/LangCompiler -t

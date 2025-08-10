@@ -1,0 +1,15 @@
+
+abstact data Teste {
+
+     n :: Char
+
+     f() : Teste{
+        t = new Teste;
+        t.n = 'a';
+        return t;
+     }
+}
+
+main() {
+   t = new Teste;
+}
