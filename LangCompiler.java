@@ -28,12 +28,16 @@ public class LangCompiler {
             Symbol presult = p.parse();
             CNode root = (CNode) presult.value;
             if (root != null) {
-                  TyChecker tv = new TyChecker();
-                  tv.enterScope();
-                  root.accept(tv);
-                  tv.leaveScope();
-                  InterpVisitor v = new InterpVisitor();
-                  root.accept(v);
+                try {
+                    TyChecker tv = new TyChecker();
+                    tv.enterScope();
+                    root.accept(tv);
+                    tv.leaveScope();
+                    System.out.println("well-typed");
+                } catch (RuntimeException e) {
+                    System.out.println("ill-typed");
+                    System.err.println("Erro: " + e.getMessage());
+                }
             } else {
                   System.out.println("root was null !");
             }
@@ -67,7 +71,7 @@ public class LangCompiler {
                   System.out.println("opcao: ");
                   System.out.println("   -lex  : lista os toke ");
                   System.out.println("   -i    : Interpreta o programa.");
-                  System.out.println("   -ti    : Verifica Tipos e interpreta.");
+                  System.out.println("   -ty    : Verifica Tipos.");
                   System.out.println("   -id   : Interpreta o programa e imprime a tabela de ambiente de execução.");
                   System.out.println("   -syn  : Executa o analisador sintático e imprime \"accepted\" ou \"rejected\".");
                   // System.out.println(" :");
@@ -81,7 +85,7 @@ public class LangCompiler {
                   if (args.length == 2 && args[0].equals("-lex")) {
                         runLexer(lex);
                         System.exit(0);
-                  } else if(args.length == 2 && args[0].equals("-t")){
+                  } else if(args.length == 2 && args[0].equals("-ty")){
                         interpretAndType(p);
                         System.exit(0);
                   }

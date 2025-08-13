@@ -3,5 +3,5 @@ java
 LangCompiler
 -syn
 -i
--t
+-ty
 -c
