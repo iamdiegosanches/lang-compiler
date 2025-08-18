@@ -19,7 +19,7 @@ sqrt(x :: Float) : Float {
 }
 
 sqrtrec(x :: Float, x0 :: Float) : Float {
-    x1 = (x0 + x/x0)/2;
+    x1 = (x0 + x/x0)/2.0;
     diff = x1*x1 - x;
     if(diff < 0.0){diff = (0.0-1.01) * diff;}
     if(diff < 0.000001){

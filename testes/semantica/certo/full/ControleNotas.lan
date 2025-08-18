@@ -2,7 +2,7 @@ abstract data Aluno {
     id :: Int;
     notas :: Float[];
 
-    novoAluno(nome :: Char[]) : Aluno{
+    novoAluno(nome :: Int) : Aluno{
         a = new Aluno;
         a.id = nome;
         a.notas = new Float[4];

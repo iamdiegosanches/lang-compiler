@@ -1,0 +1,56 @@
+abstract data Aluno {
+    id :: Int;
+    notas :: Float[];
+
+    novoAluno(nome :: Int) : Aluno{
+        a = new Aluno;
+        a.id = nome;
+        a.notas = new Float[4];
+        iterate(i : 4){
+            a.notas[i] = 0.0;
+        }
+        return a;
+    }
+
+    definirNota(a :: Aluno, i :: Int, v :: Float){
+        if(i < 0){
+           i = (0-1)*i;
+        }
+        i = i % 4;
+        a.notas[i] = v;
+    }
+
+    nota(a :: Aluno, i :: Int): Float{
+         if(i < 0){
+            i = (0-1)*i;
+         }
+         i = i % 4;
+         return a.notas[i];
+    }
+
+}
+
+imprimeAluno(a :: Aluno){
+        print 'A';
+        print 'l';
+        print 'u';
+        print 'n';
+        print 'o';
+        print ' ';
+        print a.id;
+        print ' ';
+        iterate(i : 4){
+            print a.notas[i];
+            print ';';
+        }
+        print '\n';
+    }
+
+main(){
+    aluno = novoAluno(150)[0];
+    definirNota(aluno,0,10.0);
+    definirNota(aluno,1,9.5);
+    definirNota(aluno,2,8.9);
+    imprimeAluno(aluno);
+}
+
