@@ -4,4 +4,4 @@ LangCompiler
 -syn
 -i
 -ty
--c
+-compile

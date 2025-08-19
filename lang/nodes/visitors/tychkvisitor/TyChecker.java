@@ -25,12 +25,27 @@ public class TyChecker extends LangVisitor {
 
     private ArrayList<VType> currentFunctionReturnTypes;
 
+    private Hashtable<CNode, VType> typeMap;
+
     public TyChecker() {
         stk = new Stack < VType > ();
         ctx = new Hashtable < String, TypeEntry > ();
         dataTypes = new Hashtable<>();
         tyEnv = new Stack <>();
+        typeMap = new Hashtable<>();
     }
+
+    public Hashtable<CNode, VType> getTypeMap() {
+        return this.typeMap;
+    }
+
+    private void mapNodeType(CNode node, VType type) {
+        stk.push(type);
+        if (node != null) {
+            typeMap.put(node, type);
+        }
+    }
+    
 
     public void enterScope() {
         tyEnv.push(new Hashtable<String, VType>());
@@ -429,7 +444,7 @@ public class TyChecker extends LangVisitor {
         VType leftType = stk.pop();
 
         if (leftType.getTypeValue() == CLTypes.BOOL && rightType.getTypeValue() == CLTypes.BOOL) {
-            stk.push(VTyBool.newBool());
+            mapNodeType(e, VTyBool.newBool());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() +
                                        "): Operador '&&' espera operandos do tipo 'Bool'.\n" +
@@ -448,10 +463,10 @@ public class TyChecker extends LangVisitor {
         VType te = stk.pop();
         if (td.getTypeValue() == CLTypes.INT &&
             te.getTypeValue() == CLTypes.INT) {
-            stk.push(VTyInt.newInt());
+            mapNodeType(e, VTyInt.newInt());
         } else if (td.getTypeValue() == CLTypes.FLOAT &&
             te.getTypeValue() == CLTypes.FLOAT) {
-            stk.push(VTyFloat.newFloat());
+            mapNodeType(e, VTyFloat.newFloat());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + ") Operandos incompatíveis para '-'.");
         }
@@ -464,10 +479,10 @@ public class TyChecker extends LangVisitor {
         VType te = stk.pop();
         if (td.getTypeValue() == CLTypes.INT &&
             te.getTypeValue() == CLTypes.INT) {
-            stk.push(VTyInt.newInt());
+            mapNodeType(e, VTyInt.newInt());
         } else if (td.getTypeValue() == CLTypes.FLOAT &&
             te.getTypeValue() == CLTypes.FLOAT) {
-            stk.push(VTyFloat.newFloat());
+            mapNodeType(e, VTyFloat.newFloat());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + ") Operandos incompatíveis para '+'.");
         }
@@ -481,10 +496,10 @@ public class TyChecker extends LangVisitor {
 
         if (td.getTypeValue() == CLTypes.INT &&
             te.getTypeValue() == CLTypes.INT) {
-            stk.push(VTyInt.newInt());
+            mapNodeType(e, VTyInt.newInt());
         } else if (td.getTypeValue() == CLTypes.FLOAT &&
             te.getTypeValue() == CLTypes.FLOAT) {
-            stk.push(VTyFloat.newFloat());
+            mapNodeType(e, VTyFloat.newFloat());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + ") Operandos incompatíveis para '*'.");
         }
@@ -497,10 +512,10 @@ public class TyChecker extends LangVisitor {
         VType te = stk.pop();
         if (td.getTypeValue() == CLTypes.INT &&
             te.getTypeValue() == CLTypes.INT) {
-            stk.push(VTyInt.newInt());
+            mapNodeType(e, VTyInt.newInt());
         } else if (td.getTypeValue() == CLTypes.FLOAT &&
             te.getTypeValue() == CLTypes.FLOAT) {
-            stk.push(VTyFloat.newFloat());
+            mapNodeType(e, VTyFloat.newFloat());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + ") Operandos incompatíveis para '/'.");
         }
@@ -514,7 +529,7 @@ public class TyChecker extends LangVisitor {
         VType leftType = stk.pop();
 
         if (leftType.getTypeValue() == CLTypes.INT && rightType.getTypeValue() == CLTypes.INT) {
-            stk.push(VTyInt.newInt());
+            mapNodeType(e, VTyInt.newInt());
         } else {
             String errorMsg = "Erro de Tipo (" + e.getLine() + ", " + e.getCol() + "): " +
                             "O operador de módulo '%' espera operandos do tipo 'Int'.\n" +
@@ -534,7 +549,7 @@ public class TyChecker extends LangVisitor {
         boolean isFloatComparison = leftType.match(VTyFloat.newFloat()) && rightType.match(VTyFloat.newFloat());
 
         if (isIntComparison || isFloatComparison) {
-            stk.push(VTyBool.newBool());
+            mapNodeType(e, VTyBool.newBool());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() +
                                     "): Operador '<' espera operandos do mesmo tipo (Int ou Float), mas recebeu " +
@@ -554,12 +569,12 @@ public class TyChecker extends LangVisitor {
                 (td.getTypeValue() != CLTypes.NULL && (td.getTypeValue() == CLTypes.INT || td.getTypeValue() == CLTypes.FLOAT || td.getTypeValue() == CLTypes.BOOL || td.getTypeValue() == CLTypes.CHAR))) {
                 throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Null não pode ser comparado com tipos primitivos.");
             }
-            stk.push(VTyBool.newBool());
+            mapNodeType(e, VTyBool.newBool());
             return;
         }
 
         if (te.match(td) || td.match(te)) {
-            stk.push(VTyBool.newBool());
+            mapNodeType(e, VTyBool.newBool());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() +
                                        "): Tipos incompatíveis para o operador '=='.");
@@ -578,12 +593,12 @@ public class TyChecker extends LangVisitor {
                 (td.getTypeValue() != CLTypes.NULL && (td.getTypeValue() == CLTypes.INT || td.getTypeValue() == CLTypes.FLOAT || td.getTypeValue() == CLTypes.BOOL || td.getTypeValue() == CLTypes.CHAR))) {
                 throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Null não pode ser comparado com tipos primitivos.");
             }
-            stk.push(VTyBool.newBool());
+            mapNodeType(e, VTyBool.newBool());
             return;
         }
 
         if (te.match(td) || td.match(te)) {
-            stk.push(VTyBool.newBool());
+            mapNodeType(e, VTyBool.newBool());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() +
                                        "): Tipos incompatíveis para o operador '!='.");
@@ -594,7 +609,7 @@ public class TyChecker extends LangVisitor {
         e.getRight().accept(this);
         VType td = stk.pop();
         if (td.getTypeValue() == CLTypes.BOOL) {
-            stk.push(VTyBool.newBool());
+            mapNodeType(e, VTyBool.newBool());
         } else {
             throw new RuntimeException(" Erro de tipo (" + e.getLine() + ", " + e.getCol() + ") deve ser Bool.");
         }
@@ -604,9 +619,9 @@ public class TyChecker extends LangVisitor {
         e.getRight().accept(this);
         VType td = stk.pop();
         if (td.getTypeValue() == CLTypes.INT) {
-            stk.push(VTyInt.newInt());
+            mapNodeType(e, VTyInt.newInt());
         } else if (td.getTypeValue() == CLTypes.FLOAT) {
-            stk.push(VTyFloat.newFloat());
+            mapNodeType(e, VTyFloat.newFloat());
         }else {
             throw new RuntimeException(" Erro de tipo (" + e.getLine() + ", " + e.getCol() + ").");
         }
@@ -617,7 +632,7 @@ public class TyChecker extends LangVisitor {
         if (ty == null) {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + ") variavel não declarada: " + e.getName());
         } else {
-            stk.push(ty);
+            mapNodeType(e, ty);
         }
     }
 
@@ -663,14 +678,14 @@ public class TyChecker extends LangVisitor {
                     if (indexVal < 0 || indexVal >= declaredReturnTypes.size()) {
                         throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Índice de retorno " + indexVal + " fora dos limites para a função '" + e.getID() + "'.");
                     }
-                    stk.push(declaredReturnTypes.get(indexVal));
+                    mapNodeType(e, declaredReturnTypes.get(indexVal));
                 } else {
                     if (declaredReturnTypes.isEmpty()) {
                         throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Função '" + e.getID() + "' não retorna valores para serem indexados.");
                     } else if (declaredReturnTypes.size() > 1) {
                          throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Acesso dinâmico a retorno de função com múltiplos valores. Especifique um índice estático.");
                     }
-                    stk.push(declaredReturnTypes.get(0));
+                    mapNodeType(e, declaredReturnTypes.get(0));
                 }
             } else {
 
@@ -680,7 +695,7 @@ public class TyChecker extends LangVisitor {
                 } else if (declaredReturnTypes.isEmpty()) {
                      throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Função '" + e.getID() + "' é um procedimento (não retorna valores) mas está sendo usada como expressão.");
                 } else {
-                    stk.push(declaredReturnTypes.get(0));
+                    mapNodeType(e, declaredReturnTypes.get(0));
                 }
             }
         } else {
@@ -747,29 +762,29 @@ public class TyChecker extends LangVisitor {
     }
 
     public void visit(IntLit e) {
-        stk.push(VTyInt.newInt());
+        mapNodeType(e, VTyInt.newInt());
     }
     public void visit(BoolLit e) {
-        stk.push(VTyBool.newBool());
+        mapNodeType(e, VTyBool.newBool());
     }
     public void visit(FloatLit e) {
-        stk.push(VTyFloat.newFloat());
+        mapNodeType(e, VTyFloat.newFloat());
     }
 
     public void visit(TyBool t) {
-        stk.push(VTyBool.newBool());
+        mapNodeType(t, VTyBool.newBool());
     }
     public void visit(TyInt t) {
-        stk.push(VTyInt.newInt());
+        mapNodeType(t, VTyInt.newInt());
     }
     public void visit(TyFloat t) {
-        stk.push(VTyFloat.newFloat());
+        mapNodeType(t, VTyFloat.newFloat());
     }
 
-    public void visit(TyChar t) { stk.push(VTyChar.newChar()); }
-    public void visit(CharLit e) { stk.push(VTyChar.newChar()); }
+    public void visit(TyChar t) { mapNodeType(t, VTyChar.newChar()); }
+    public void visit(CharLit e) { mapNodeType(e, VTyChar.newChar()); }
 
-    public void visit(NullLit e) { stk.push(VTyNull.newNull()); }
+    public void visit(NullLit e) { mapNodeType(e, VTyNull.newNull()); }
 
     public void visit(NewArray e) {
         e.getSizeExp().accept(this);
@@ -782,7 +797,7 @@ public class TyChecker extends LangVisitor {
         e.getType().accept(this);
         VType baseType = stk.pop();
 
-        stk.push(new VTyArr(baseType));
+        mapNodeType(e, new VTyArr(baseType));
     }
 
     public void visit(ArrayAccess e) {
@@ -805,16 +820,16 @@ public class TyChecker extends LangVisitor {
             );
         }
         
-        stk.push(actualArrayType.getTyArg());
+        mapNodeType(e, actualArrayType.getTyArg());
     }
 
     public void visit(TyArr t) {
         if (t.getElementType() != null) {
             t.getElementType().accept(this);
             VType elementType = stk.pop();
-            stk.push(new VTyArr(elementType));
+            mapNodeType(t, new VTyArr(elementType));
         } else {
-            stk.push(new VTyArr(VTyUndetermined.newUndetermined()));
+            mapNodeType(t, new VTyArr(VTyUndetermined.newUndetermined()));
         }
     }
 
@@ -861,7 +876,7 @@ public class TyChecker extends LangVisitor {
             throw new RuntimeException("Erro de tipo (" + t.getLine() + ", " + t.getCol() + "): Tipo de dados '" + t.getName() + "' não definido.");
         }
         // Retorna um tipo de usuário para que possa ser armazenado na pilha.
-        stk.push(new VTyUser(t.getName()));
+        mapNodeType(t, new VTyUser(t.getName()));
     }
 
     @Override
@@ -874,7 +889,7 @@ public class TyChecker extends LangVisitor {
         if (def.isAbstract()) {
              throw new RuntimeException("Erro Semântico (" + e.getLine() + "," + e.getCol() + "): Não é possível instanciar um tipo abstrato: '" + typeName + "'.");
         }
-        stk.push(new VTyUser(typeName));
+        mapNodeType(e, new VTyUser(typeName));
     }
 
     @Override
@@ -897,7 +912,7 @@ public class TyChecker extends LangVisitor {
             for (Decl attr : typeDef.getAttributes()) {
                 if (attr.getVar().getName().equals(fieldName)) {
                     attr.getType().accept(this);
-                    stk.push(stk.pop());
+                    mapNodeType(e, stk.pop());
                     found = true;
                     break;
                 }
