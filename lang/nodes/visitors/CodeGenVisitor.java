@@ -31,6 +31,10 @@ public class CodeGenVisitor extends LangVisitor {
     private int loopCounter = 0;
     private final Hashtable<String, String> arraySizes;
 
+    private final Hashtable<String, FunDef> funDefs = new Hashtable<>();
+    private final ArrayList<String> helperFunctions = new ArrayList<>();
+    private final HashSet<String> createdHelpers = new HashSet<>();
+
     public CodeGenVisitor(Hashtable<CNode, VType> typeMap) {
         this.typeMap = typeMap;
         this.cg = new CodeGen();
@@ -52,7 +56,7 @@ public class CodeGenVisitor extends LangVisitor {
         if (t instanceof VTyFloat) return "float";
         if (t instanceof VTyBool) return "int";
         if (t instanceof VTyChar) return "char";
-        if (t instanceof VTyUser) return "struct " + ((VTyUser) t).getName();
+        if (t instanceof VTyUser)  return "struct " + ((VTyUser) t).getName() + "*";
         if (t instanceof VTyArr) {
             return toCType(((VTyArr) t).getTyArg()) + "*";
         }
@@ -63,6 +67,20 @@ public class CodeGenVisitor extends LangVisitor {
 
     @Override
     public void visit(Program p) {
+        for (Def d : p.getDefs()) {
+            if (d instanceof FunDef) {
+                FunDef fd = (FunDef) d;
+                funDefs.put(fd.getFname(), fd);
+            } else if (d instanceof DataDef) {
+                DataDef dataDef = (DataDef) d;
+                if (dataDef.getFunctions() != null) {
+                    for (FunDef fd : dataDef.getFunctions()) {
+                        funDefs.put(fd.getFname(), fd);
+                    }
+                }
+            }
+        }
+
         ArrayList<String> dataDefs = new ArrayList<>();
         ArrayList<String> funList = new ArrayList<>();
 
@@ -121,7 +139,7 @@ public class CodeGenVisitor extends LangVisitor {
         d.getBody().accept(declVisitor);
         ArrayList<String> declarations = new ArrayList<>();
         for (CAttr attr : declVisitor.getDeclarations()) {
-            VType varType = typeOf(attr.getExp());
+            VType varType = typeOf((CNode)attr.getVar()); 
             String type = toCType(varType);
             String name = attr.getVar().getName();
             declarations.add(cg.decl(name, type));
@@ -274,7 +292,70 @@ public class CodeGenVisitor extends LangVisitor {
     @Override public void visit(Equal eq) { visitBinaryOperator(eq, "=="); }
     @Override public void visit(NotEqual ne) { visitBinaryOperator(ne, "!="); }
 
-    @Override public void visit(FCall f) { /* ... */ }
+    @Override
+    public void visit(FCall f) {
+        String fname = f.getID();
+        FunDef funDef = funDefs.get(fname);
+
+        if (funDef == null) {
+            throw new RuntimeException("CodeGen Error: Função '" + fname + "' não encontrada.");
+        }
+
+        ArrayList<CType> returnTypes = funDef.getRet();
+        ArrayList<String> args = new ArrayList<>();
+        if (f.getArgs() != null) {
+            for (Exp e : f.getArgs()) {
+                e.accept(this);
+                args.add(cg.getLastValue());
+            }
+        }
+
+        if (returnTypes.size() <= 1) {
+            String cFname = fname.equals("main") ? "inicio" : fname;
+            cg.setLastValue(cg.fcall(cFname, args));
+            return;
+        }
+
+        if (f.getReturnIndex() == null || !(f.getReturnIndex() instanceof IntLit)) {
+            throw new RuntimeException("CodeGen Error (" + f.getLine() + "," + f.getCol() + "): Acesso indexado a função com múltiplos retornos requer um índice inteiro constante.");
+        }
+        
+        int index = ((IntLit)f.getReturnIndex()).getValue();
+        if (index < 0 || index >= returnTypes.size()) {
+            throw new RuntimeException("CodeGen Error (" + f.getLine() + "," + f.getCol() + "): Índice de retorno fora dos limites.");
+        }
+
+        String helperName = "_" + fname + "_ret" + index;
+
+        if (!createdHelpers.contains(helperName)) {
+            ArrayList<String> tempVars = new ArrayList<>();
+            ArrayList<String> tempAddrs = new ArrayList<>();
+            String cFname = fname.equals("main") ? "inicio" : fname;
+
+            for (int i = 0; i < returnTypes.size(); i++) {
+                VType retVType = typeOf(returnTypes.get(i));
+                String cType = toCType(retVType);
+                String varName = "_tmp_ret" + i;
+                tempVars.add(cType + " " + varName + ";");
+                tempAddrs.add("&" + varName);
+            }
+            
+            String callStmt = cFname + "(" + String.join(", ", tempAddrs) + ");";
+            String returnStmt = "return _tmp_ret" + index + ";";
+            
+            VType targetReturnVType = typeOf(returnTypes.get(index));
+            String helperRetType = toCType(targetReturnVType);
+
+            String helperBody = String.join("\n\t", tempVars) + "\n\t" + callStmt + "\n\t" + returnStmt;
+            String helperFunc = helperRetType + " " + helperName + "(void) {\n\t" + helperBody + "\n}";
+            
+            helperFunctions.add(helperFunc);
+            createdHelpers.add(helperName);
+        }
+
+        cg.setLastValue(helperName + "()");
+    }
+    
     @Override public void visit(IntLit i) { cg.setLastValue(String.valueOf(i.getValue())); }
     @Override public void visit(FloatLit fl) { cg.setLastValue(String.valueOf(fl.getValue())); }
     @Override public void visit(BoolLit b) { cg.setLastValue(b.getValue() ? "1" : "0"); }
@@ -292,7 +373,12 @@ public class CodeGenVisitor extends LangVisitor {
     @Override public void visit(Not n) { n.getRight().accept(this); cg.setLastValue("!(" + cg.getLastValue() + ")"); }
     @Override public void visit(UMinus u) { u.getRight().accept(this); cg.setLastValue("-(" + cg.getLastValue() + ")"); }
     @Override public void visit(ArrayAccess a) { a.getArrayVar().accept(this); String arr = cg.getLastValue(); a.getIndexExp().accept(this); String idx = cg.getLastValue(); cg.setLastValue(arr + "[" + idx + "]");}
-    @Override public void visit(DotAccess d) { d.getRecord().accept(this); String rec = cg.getLastValue(); cg.setLastValue(rec + "->" + d.getFieldName());}
+    @Override 
+    public void visit(DotAccess d) { 
+        d.getRecord().accept(this); 
+        String rec = cg.getLastValue(); 
+        cg.setLastValue(rec + "->" + d.getFieldName());
+    }    
     @Override public void visit(NewObject n) {
         String typeName = n.getType().getName();
         String cType = "struct " + typeName;
@@ -357,13 +443,29 @@ public class CodeGenVisitor extends LangVisitor {
             }
         }
         @Override
-        public void visit(CSeq s){ s.getLeft().accept(this); s.getRight().accept(this); }
+        public void visit(CSeq s){ 
+            s.getLeft().accept(this); 
+            s.getRight().accept(this); 
+        }
         @Override
         public void visit(If i){ i.getThn().accept(this); if(i.getEls() != null) i.getEls().accept(this); }
         @Override
         public void visit(Loop l){ l.getBody().accept(this); }
         @Override
         public void visit(IterateWithVar i){ i.getBody().accept(this); }
+
+        @Override
+        public void visit(FCallCommand d) {
+            for (LValue target : d.getReturnTargets()) {
+                if (target instanceof Var) {
+                    String varName = target.getName();
+                    if (!declaredVars.contains(varName)) {
+                        declarations.add(new CAttr(target.getLine(), target.getCol(), target, null));
+                        declaredVars.add(varName);
+                    }
+                }
+            }
+        }
     }
 
     private class CodeGen {
@@ -410,8 +512,11 @@ public class CodeGenVisitor extends LangVisitor {
             return ret + " " + id + "(" + paramsStr + ") {\n" + declBlock + "\t" + body.replace("\n", "\n\t") + "\n}";
         }
         public String program(ArrayList<String> dataDefs, ArrayList<String> flist) {
+            String helpers = String.join("\n\n", helperFunctions);
+
             return "#include <stdio.h>\n#include <stdlib.h>\n\n" + 
                    String.join("\n", dataDefs) + "\n\n" +
+                   helpers + "\n\n" + 
                    String.join("\n\n", flist) +
                    "\n\nint main() {\n\tinicio();\n\treturn 0;\n}\n";
         }
