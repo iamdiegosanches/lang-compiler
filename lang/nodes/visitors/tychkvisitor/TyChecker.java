@@ -13,40 +13,47 @@ import lang.nodes.*;
 import java.util.Hashtable;
 import java.util.Stack;
 import java.util.ArrayList;
+import java.util.Map;
 
 public class TyChecker extends LangVisitor {
 
     private Stack < VType > stk;
     private Hashtable < String, TypeEntry > ctx;
+    private Hashtable<String, DataDef> dataTypes;
 
     private Stack < Hashtable < String, VType >> tyEnv;
 
     private ArrayList<VType> currentFunctionReturnTypes;
 
+    private Hashtable<CNode, VType> typeMap;
+
     public TyChecker() {
         stk = new Stack < VType > ();
         ctx = new Hashtable < String, TypeEntry > ();
-
+        dataTypes = new Hashtable<>();
         tyEnv = new Stack <>();
+        typeMap = new Hashtable<>();
     }
 
-    public void enterScope() { // LEMBRAR DE MUDAR PRA PRIVATE DEPOIS
+    public Hashtable<CNode, VType> getTypeMap() {
+        return this.typeMap;
+    }
+
+    private void mapNodeType(CNode node, VType type) {
+        stk.push(type);
+        if (node != null) {
+            typeMap.put(node, type);
+        }
+    }
+    
+
+    public void enterScope() {
         tyEnv.push(new Hashtable<String, VType>());
     }
 
-    public void leaveScope() { // LEMBRAR DE MUDAR PRA PRIVATE DEPOIS
+    public void leaveScope() {
         tyEnv.pop();
     }
-
-    // private void declareVar(String name, VType type, int line, int col) {
-    //     Hashtable<String, VType> currentScope = tyEnv.peek();
-    //     if (currentScope.containsKey(name)) {
-    //         throw new RuntimeException(
-    //             "Erro Semântico (" + line + ", " + col + "): Variável '" + name + "' já foi declarada neste escopo."
-    //         );
-    //     }
-    //     currentScope.put(name, type);
-    // }
 
     private void declareVar(String name, VType type, int line, int col) {
         for (int i = tyEnv.size() - 2; i >= 0; i--) {
@@ -76,12 +83,60 @@ public class TyChecker extends LangVisitor {
         return null; // Retorna null se não encontrar
     }
 
+    private void collectDataDefinitions(ArrayList<Def> defs) {
+        for (Def d : defs) {
+            if (d instanceof DataDef) {
+                DataDef dataDef = (DataDef) d;
+                String typeName = dataDef.getTypeName();
+                if (dataTypes.containsKey(typeName)) {
+                     throw new RuntimeException("Erro Semântico (" + dataDef.getLine() + ", " + dataDef.getCol() + "): Tipo '" + typeName + "' já declarado.");
+                }
+                dataTypes.put(typeName, dataDef);
+                
+                // Coletar assinaturas de funções internas
+                if (dataDef.getFunctions() != null) {
+                    for (FunDef f : dataDef.getFunctions()) {
+                        collectFunctionSignature(f);
+                    }
+                }
+            }
+        }
+    }
+    
+    private void collectFunctionSignature(FunDef f) {
+        TypeEntry e = new TypeEntry();
+        e.sym = f.getFname();
+        e.localCtx = new Hashtable<>();
+
+        ArrayList<VType> paramTypes = new ArrayList<>();
+        for (Bind b: f.getParams()) {
+            b.getType().accept(this);
+            paramTypes.add(stk.pop());
+        }
+
+        ArrayList<VType> returnTypes = new ArrayList<>();
+        for (CType retType : f.getRet()) {
+            retType.accept(this);
+            returnTypes.add(stk.pop());
+        }
+
+        e.ty = new VTyFuncProper(paramTypes, returnTypes); 
+
+        if (ctx.containsKey(f.getFname())) {
+             throw new RuntimeException("Erro Semântico (" + f.getLine() + ", " + f.getCol() + "): Função '" + f.getFname() + "' já declarada.");
+        }
+        ctx.put(f.getFname(), e);
+    }
+
+
     public void visit(Program p) {
+        collectDataDefinitions(p.getDefs());
         collectFunctionSignatures(p.getFuncs());
 
         for (FunDef f: p.getFuncs()) {
             enterScope();
 
+            // Lida com parâmetros da função
             for (Bind b : f.getParams()) {
                 b.getType().accept(this);
                 VType paramType = stk.pop();
@@ -105,52 +160,25 @@ public class TyChecker extends LangVisitor {
         if (mainEntry == null) {
             throw new RuntimeException("Erro Semântico: Função 'main' não encontrada.");
         }
-        if (!mainEntry.ty.match(new VTyFuncProper(new ArrayList<>(), new ArrayList<>()))) { // main deve ter ( ) -> ( )
+        if (!mainEntry.ty.match(new VTyFuncProper(new ArrayList<>(), new ArrayList<>()))) { 
              throw new RuntimeException("Erro Semântico: A função 'main' deve ter 0 parâmetros e 0 retornos.");
         }
     }
 
     private void collectFunctionSignatures(ArrayList < FunDef > lf) {
         for (FunDef f: lf) {
-            TypeEntry e = new TypeEntry();
-            e.sym = f.getFname();
-            e.localCtx = new Hashtable < String, VType > ();
-
-            ArrayList<VType> paramTypes = new ArrayList<>();
-            for (Bind b: f.getParams()) {
-                b.getType().accept(this); // Avalia o tipo do parâmetro e empilha
-                paramTypes.add(stk.pop());
-            }
-
-            ArrayList<VType> returnTypes = new ArrayList<>();
-            for (CType retType : f.getRet()) {
-                retType.accept(this);
-                returnTypes.add(stk.pop());
-            }
-
-            VType[] funcTypesArray = new VType[paramTypes.size() + returnTypes.size()];
-            for (int i = 0; i < paramTypes.size(); i++) {
-                funcTypesArray[i] = paramTypes.get(i);
-            }
-            for (int i = 0; i < returnTypes.size(); i++) {
-                funcTypesArray[i + paramTypes.size()] = returnTypes.get(i);
-            }
-            
-            e.ty = new VTyFuncProper(paramTypes, returnTypes); 
-
-            if (ctx.containsKey(f.getFname())) {
-                 throw new RuntimeException("Erro Semântico (" + f.getLine() + ", " + f.getCol() + "): Função '" + f.getFname() + "' já declarada.");
-            }
-            ctx.put(f.getFname(), e);
+            collectFunctionSignature(f);
         }
     }
 
     public void visit(FunDef d) {
+        // Se a função pertence a um DataDef abstrato, a verificação do corpo é feita aqui.
+        // Já se a função é global, ela é verificada na visit(Program p).
         d.getBody().accept(this);
     }
 
     public void visit(Bind d) {
-        // Nenhuma ação aqui, pois os parâmetros já são processados na collectFunctionSignatures e no visit(Program p).
+        // Nada a fazer, já processado na coleta de assinaturas e parâmetros.
     }
 
     public void visit(CSeq d) {
@@ -210,6 +238,17 @@ public class TyChecker extends LangVisitor {
                     );
                 }
             }
+        } else if (lvalue instanceof DotAccess) {
+            // A verificação do DotAccess já garante que o tipo do lado esquerdo é um objeto com o campo correto.
+            // Apenas verificamos a compatibilidade de tipo da expressão.
+            DotAccess dotAccess = (DotAccess) lvalue;
+            dotAccess.accept(this);
+            VType dotAccessType = stk.pop();
+            
+            if (!dotAccessType.match(expType)) {
+                throw new RuntimeException("Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipos incompatíveis na atribuição a atributo de objeto. Esperado '" + dotAccessType.toString() + "', encontrado '" + expType.toString() + "'.");
+            }
+
         } else {
             throw new RuntimeException("Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): LValue de atribuição não suportado.");
         }
@@ -352,10 +391,10 @@ public class TyChecker extends LangVisitor {
             td.getTypeValue() == CLTypes.BOOL ||
             td.getTypeValue() == CLTypes.CHAR ||
             td.getTypeValue() == CLTypes.NULL ||
-            td.getTypeValue() == CLTypes.ARR) {} else {
+            td.getTypeValue() == CLTypes.ARR ||
+            td instanceof VTyUser) {} else {
             throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + ") Operandos incompatíveis");
         }
-
     }
 
 
@@ -382,10 +421,19 @@ public class TyChecker extends LangVisitor {
                     "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipo do elemento do array ('" + elementType.toString() + "') não é permitido no comando 'read'."
                 );
             }
+        } else if (lv instanceof DotAccess) {
+            // Apenas checa se é um tipo primitivo
+             lv.accept(this);
+             VType attrType = stk.pop();
+             if (!(attrType instanceof VTyInt || attrType instanceof VTyFloat ||
+                 attrType instanceof VTyChar || attrType instanceof VTyBool)) {
+                 throw new RuntimeException(
+                     "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipo do atributo ('" + attrType.toString() + "') não é permitido no comando 'read'."
+                 );
+             }
         } else {
             throw new RuntimeException("Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Alvo de leitura não suportado.");
         }
-        
     }
 
     public void visit(And e){
@@ -396,7 +444,7 @@ public class TyChecker extends LangVisitor {
         VType leftType = stk.pop();
 
         if (leftType.getTypeValue() == CLTypes.BOOL && rightType.getTypeValue() == CLTypes.BOOL) {
-            stk.push(VTyBool.newBool());
+            mapNodeType(e, VTyBool.newBool());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() +
                                        "): Operador '&&' espera operandos do tipo 'Bool'.\n" +
@@ -415,10 +463,10 @@ public class TyChecker extends LangVisitor {
         VType te = stk.pop();
         if (td.getTypeValue() == CLTypes.INT &&
             te.getTypeValue() == CLTypes.INT) {
-            stk.push(VTyInt.newInt());
+            mapNodeType(e, VTyInt.newInt());
         } else if (td.getTypeValue() == CLTypes.FLOAT &&
             te.getTypeValue() == CLTypes.FLOAT) {
-            stk.push(VTyFloat.newFloat());
+            mapNodeType(e, VTyFloat.newFloat());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + ") Operandos incompatíveis para '-'.");
         }
@@ -431,10 +479,10 @@ public class TyChecker extends LangVisitor {
         VType te = stk.pop();
         if (td.getTypeValue() == CLTypes.INT &&
             te.getTypeValue() == CLTypes.INT) {
-            stk.push(VTyInt.newInt());
+            mapNodeType(e, VTyInt.newInt());
         } else if (td.getTypeValue() == CLTypes.FLOAT &&
             te.getTypeValue() == CLTypes.FLOAT) {
-            stk.push(VTyFloat.newFloat());
+            mapNodeType(e, VTyFloat.newFloat());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + ") Operandos incompatíveis para '+'.");
         }
@@ -448,10 +496,10 @@ public class TyChecker extends LangVisitor {
 
         if (td.getTypeValue() == CLTypes.INT &&
             te.getTypeValue() == CLTypes.INT) {
-            stk.push(VTyInt.newInt());
+            mapNodeType(e, VTyInt.newInt());
         } else if (td.getTypeValue() == CLTypes.FLOAT &&
             te.getTypeValue() == CLTypes.FLOAT) {
-            stk.push(VTyFloat.newFloat());
+            mapNodeType(e, VTyFloat.newFloat());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + ") Operandos incompatíveis para '*'.");
         }
@@ -464,10 +512,10 @@ public class TyChecker extends LangVisitor {
         VType te = stk.pop();
         if (td.getTypeValue() == CLTypes.INT &&
             te.getTypeValue() == CLTypes.INT) {
-            stk.push(VTyInt.newInt());
+            mapNodeType(e, VTyInt.newInt());
         } else if (td.getTypeValue() == CLTypes.FLOAT &&
             te.getTypeValue() == CLTypes.FLOAT) {
-            stk.push(VTyFloat.newFloat());
+            mapNodeType(e, VTyFloat.newFloat());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + ") Operandos incompatíveis para '/'.");
         }
@@ -481,7 +529,7 @@ public class TyChecker extends LangVisitor {
         VType leftType = stk.pop();
 
         if (leftType.getTypeValue() == CLTypes.INT && rightType.getTypeValue() == CLTypes.INT) {
-            stk.push(VTyInt.newInt());
+            mapNodeType(e, VTyInt.newInt());
         } else {
             String errorMsg = "Erro de Tipo (" + e.getLine() + ", " + e.getCol() + "): " +
                             "O operador de módulo '%' espera operandos do tipo 'Int'.\n" +
@@ -501,8 +549,7 @@ public class TyChecker extends LangVisitor {
         boolean isFloatComparison = leftType.match(VTyFloat.newFloat()) && rightType.match(VTyFloat.newFloat());
 
         if (isIntComparison || isFloatComparison) {
-            // O RESULTADO de uma operação de comparação (<, ==, !=) é SEMPRE um booleano.
-            stk.push(VTyBool.newBool());
+            mapNodeType(e, VTyBool.newBool());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() +
                                     "): Operador '<' espera operandos do mesmo tipo (Int ou Float), mas recebeu " +
@@ -522,26 +569,12 @@ public class TyChecker extends LangVisitor {
                 (td.getTypeValue() != CLTypes.NULL && (td.getTypeValue() == CLTypes.INT || td.getTypeValue() == CLTypes.FLOAT || td.getTypeValue() == CLTypes.BOOL || td.getTypeValue() == CLTypes.CHAR))) {
                 throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Null não pode ser comparado com tipos primitivos.");
             }
-            stk.push(VTyBool.newBool());
+            mapNodeType(e, VTyBool.newBool());
             return;
         }
 
-        if (te.getTypeValue() == td.getTypeValue()) {
-
-            switch (te.getTypeValue()) {
-                case CLTypes.INT:
-                case CLTypes.FLOAT:
-                case CLTypes.CHAR:
-                case CLTypes.BOOL:
-
-                    stk.push(VTyBool.newBool());
-                    break;
-
-                default:
-                    throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() +
-                                               "): Operador '==' não pode ser aplicado a operandos do tipo " + te.getTypeValue());
-            }
-
+        if (te.match(td) || td.match(te)) {
+            mapNodeType(e, VTyBool.newBool());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() +
                                        "): Tipos incompatíveis para o operador '=='.");
@@ -560,26 +593,12 @@ public class TyChecker extends LangVisitor {
                 (td.getTypeValue() != CLTypes.NULL && (td.getTypeValue() == CLTypes.INT || td.getTypeValue() == CLTypes.FLOAT || td.getTypeValue() == CLTypes.BOOL || td.getTypeValue() == CLTypes.CHAR))) {
                 throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Null não pode ser comparado com tipos primitivos.");
             }
-            stk.push(VTyBool.newBool());
+            mapNodeType(e, VTyBool.newBool());
             return;
         }
 
-        if (te.getTypeValue() == td.getTypeValue()) {
-
-            switch (te.getTypeValue()) {
-                case CLTypes.INT:
-                case CLTypes.FLOAT:
-                case CLTypes.BOOL:
-                case CLTypes.CHAR:
-
-                    stk.push(VTyBool.newBool());
-                    break;
-
-                default:
-                    throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() +
-                                               "): Operador '!=' não pode ser aplicado a operandos do tipo " + te.getTypeValue());
-            }
-
+        if (te.match(td) || td.match(te)) {
+            mapNodeType(e, VTyBool.newBool());
         } else {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() +
                                        "): Tipos incompatíveis para o operador '!='.");
@@ -590,7 +609,7 @@ public class TyChecker extends LangVisitor {
         e.getRight().accept(this);
         VType td = stk.pop();
         if (td.getTypeValue() == CLTypes.BOOL) {
-            stk.push(VTyBool.newBool());
+            mapNodeType(e, VTyBool.newBool());
         } else {
             throw new RuntimeException(" Erro de tipo (" + e.getLine() + ", " + e.getCol() + ") deve ser Bool.");
         }
@@ -600,9 +619,9 @@ public class TyChecker extends LangVisitor {
         e.getRight().accept(this);
         VType td = stk.pop();
         if (td.getTypeValue() == CLTypes.INT) {
-            stk.push(VTyInt.newInt());
+            mapNodeType(e, VTyInt.newInt());
         } else if (td.getTypeValue() == CLTypes.FLOAT) {
-            stk.push(VTyFloat.newFloat());
+            mapNodeType(e, VTyFloat.newFloat());
         }else {
             throw new RuntimeException(" Erro de tipo (" + e.getLine() + ", " + e.getCol() + ").");
         }
@@ -613,7 +632,7 @@ public class TyChecker extends LangVisitor {
         if (ty == null) {
             throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + ") variavel não declarada: " + e.getName());
         } else {
-            stk.push(ty);
+            mapNodeType(e, ty);
         }
     }
 
@@ -659,13 +678,14 @@ public class TyChecker extends LangVisitor {
                     if (indexVal < 0 || indexVal >= declaredReturnTypes.size()) {
                         throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Índice de retorno " + indexVal + " fora dos limites para a função '" + e.getID() + "'.");
                     }
-                    stk.push(declaredReturnTypes.get(indexVal));
+                    mapNodeType(e, declaredReturnTypes.get(indexVal));
                 } else {
-
                     if (declaredReturnTypes.isEmpty()) {
                         throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Função '" + e.getID() + "' não retorna valores para serem indexados.");
+                    } else if (declaredReturnTypes.size() > 1) {
+                         throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Acesso dinâmico a retorno de função com múltiplos valores. Especifique um índice estático.");
                     }
-                    stk.push(declaredReturnTypes.get(0));
+                    mapNodeType(e, declaredReturnTypes.get(0));
                 }
             } else {
 
@@ -675,7 +695,7 @@ public class TyChecker extends LangVisitor {
                 } else if (declaredReturnTypes.isEmpty()) {
                      throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Função '" + e.getID() + "' é um procedimento (não retorna valores) mas está sendo usada como expressão.");
                 } else {
-                    stk.push(declaredReturnTypes.get(0));
+                    mapNodeType(e, declaredReturnTypes.get(0));
                 }
             }
         } else {
@@ -742,29 +762,29 @@ public class TyChecker extends LangVisitor {
     }
 
     public void visit(IntLit e) {
-        stk.push(VTyInt.newInt());
+        mapNodeType(e, VTyInt.newInt());
     }
     public void visit(BoolLit e) {
-        stk.push(VTyBool.newBool());
+        mapNodeType(e, VTyBool.newBool());
     }
     public void visit(FloatLit e) {
-        stk.push(VTyFloat.newFloat());
+        mapNodeType(e, VTyFloat.newFloat());
     }
 
     public void visit(TyBool t) {
-        stk.push(VTyBool.newBool());
+        mapNodeType(t, VTyBool.newBool());
     }
     public void visit(TyInt t) {
-        stk.push(VTyInt.newInt());
+        mapNodeType(t, VTyInt.newInt());
     }
     public void visit(TyFloat t) {
-        stk.push(VTyFloat.newFloat());
+        mapNodeType(t, VTyFloat.newFloat());
     }
 
-    public void visit(TyChar t) { stk.push(VTyChar.newChar()); }
-    public void visit(CharLit e) { stk.push(VTyChar.newChar()); }
+    public void visit(TyChar t) { mapNodeType(t, VTyChar.newChar()); }
+    public void visit(CharLit e) { mapNodeType(e, VTyChar.newChar()); }
 
-    public void visit(NullLit e) { stk.push(VTyNull.newNull()); }
+    public void visit(NullLit e) { mapNodeType(e, VTyNull.newNull()); }
 
     public void visit(NewArray e) {
         e.getSizeExp().accept(this);
@@ -777,7 +797,7 @@ public class TyChecker extends LangVisitor {
         e.getType().accept(this);
         VType baseType = stk.pop();
 
-        stk.push(new VTyArr(baseType));
+        mapNodeType(e, new VTyArr(baseType));
     }
 
     public void visit(ArrayAccess e) {
@@ -800,16 +820,16 @@ public class TyChecker extends LangVisitor {
             );
         }
         
-        stk.push(actualArrayType.getTyArg());
+        mapNodeType(e, actualArrayType.getTyArg());
     }
 
     public void visit(TyArr t) {
         if (t.getElementType() != null) {
             t.getElementType().accept(this);
             VType elementType = stk.pop();
-            stk.push(new VTyArr(elementType));
+            mapNodeType(t, new VTyArr(elementType));
         } else {
-            stk.push(new VTyArr(VTyUndetermined.newUndetermined()));
+            mapNodeType(t, new VTyArr(VTyUndetermined.newUndetermined()));
         }
     }
 
@@ -821,31 +841,89 @@ public class TyChecker extends LangVisitor {
 
     @Override
     public void visit(DataDef d) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        for(Decl attr : d.getAttributes()){
+            attr.accept(this);
+        }
+        if(d.getFunctions() != null){
+             for(FunDef f : d.getFunctions()){
+                enterScope();
+                for(Bind b : f.getParams()){
+                   b.getType().accept(this);
+                   VType paramType = stk.pop();
+                   tyEnv.peek().put(b.getVar().getName(), paramType);
+                }
+                ArrayList<VType> convertedReturnTypes = new ArrayList<>();
+                for (CType retTypeAst : f.getRet()) {
+                   retTypeAst.accept(this); 
+                   convertedReturnTypes.add(stk.pop());
+                }
+                this.currentFunctionReturnTypes = convertedReturnTypes;
+                f.accept(this);
+                leaveScope();
+                this.currentFunctionReturnTypes = null;
+             }
+        }
     }
 
     @Override
     public void visit(Decl d) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+       d.getType().accept(this);
     }
 
     @Override
     public void visit(TyUser t) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        if (!dataTypes.containsKey(t.getName())) {
+            throw new RuntimeException("Erro de tipo (" + t.getLine() + ", " + t.getCol() + "): Tipo de dados '" + t.getName() + "' não definido.");
+        }
+        // Retorna um tipo de usuário para que possa ser armazenado na pilha.
+        mapNodeType(t, new VTyUser(t.getName()));
     }
 
     @Override
     public void visit(NewObject e) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        String typeName = e.getType().getName();
+        if (!dataTypes.containsKey(typeName)) {
+            throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Tipo de dados '" + typeName + "' não definido.");
+        }
+        DataDef def = dataTypes.get(typeName);
+        if (def.isAbstract()) {
+             throw new RuntimeException("Erro Semântico (" + e.getLine() + "," + e.getCol() + "): Não é possível instanciar um tipo abstrato: '" + typeName + "'.");
+        }
+        mapNodeType(e, new VTyUser(typeName));
     }
 
     @Override
     public void visit(DotAccess e) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        e.getRecord().accept(this);
+        VType recordType = stk.pop();
+
+        if (recordType instanceof VTyUser) {
+            VTyUser userType = (VTyUser) recordType;
+            String typeName = userType.getName();
+
+            if (!dataTypes.containsKey(typeName)) {
+                throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Tipo de dados '" + typeName + "' não definido.");
+            }
+
+            DataDef typeDef = dataTypes.get(typeName);
+            String fieldName = e.getFieldName();
+
+            boolean found = false;
+            for (Decl attr : typeDef.getAttributes()) {
+                if (attr.getVar().getName().equals(fieldName)) {
+                    attr.getType().accept(this);
+                    mapNodeType(e, stk.pop());
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Atributo '" + fieldName + "' não encontrado no tipo '" + typeName + "'.");
+            }
+
+        } else {
+            throw new RuntimeException("Erro de tipo (" + e.getLine() + ", " + e.getCol() + "): Tentativa de acesso a atributo em um tipo não-objeto: " + recordType.toString());
+        }
     }
+    
 }
