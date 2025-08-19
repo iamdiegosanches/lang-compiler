@@ -1,8 +1,3 @@
-///////////////////////////////////////////////////////////////////////
-/// Álvaro Braz Cunha - 21.1.8163                                   ///
-/// Diego Sanches Nere dos Santos - 21.1.8003                       ///
-///////////////////////////////////////////////////////////////////////
-
 package lang.nodes.visitors;
 
 import lang.nodes.*;
@@ -11,18 +6,15 @@ import lang.nodes.expr.*;
 import lang.nodes.command.*;
 import lang.nodes.types.*;
 import lang.nodes.visitors.tychkvisitor.*;
+import lang.nodes.visitors.codegen.CodeGen;
+import lang.nodes.visitors.codegen.DeclarationVisitor;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Stack;
-import java.util.LinkedHashSet;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * CodeGenVisitor percorre a AST da linguagem 'lang' e gera código C
- * correspondente (source-to-source).
- */
 public class CodeGenVisitor extends LangVisitor {
 
     private final Hashtable<CNode, VType> typeMap;
@@ -32,12 +24,14 @@ public class CodeGenVisitor extends LangVisitor {
     private final Hashtable<String, String> arraySizes;
 
     private final Hashtable<String, FunDef> funDefs = new Hashtable<>();
-    private final ArrayList<String> helperFunctions = new ArrayList<>();
-    private final HashSet<String> createdHelpers = new HashSet<>();
+    private final ArrayList<String> helperFunctions;
+    private final HashSet<String> createdHelpers;
 
     public CodeGenVisitor(Hashtable<CNode, VType> typeMap) {
         this.typeMap = typeMap;
-        this.cg = new CodeGen();
+        this.helperFunctions = new ArrayList<>();
+        this.createdHelpers = new HashSet<>();
+        this.cg = new CodeGen(this.helperFunctions, this.createdHelpers);
         this.currentFunction = new Stack<>();
         this.arraySizes = new Hashtable<>();
     }
@@ -62,8 +56,29 @@ public class CodeGenVisitor extends LangVisitor {
         }
         return "void";
     }
+    
+    private String generateFunctionPrototype(FunDef d) {
+        String fname = d.getFname().equals("main") ? "inicio" : d.getFname();
+        
+        ArrayList<String> params = new ArrayList<>();
+        for (Bind b : d.getParams()) {
+            params.add(toCType(typeOf(b.getType())) + " " + b.getVar().getName());
+        }
 
-    // --- VISITANTES PRINCIPAIS ---
+        String retType = "void";
+        if (d.getRet() != null && d.getRet().size() == 1) {
+            retType = toCType(typeOf(d.getRet().get(0)));
+        } else if (d.getRet() != null && d.getRet().size() > 1) {
+            retType = "void";
+            int retCount = 0;
+            for(CType ret : d.getRet()){
+                String ptrType = toCType(typeOf(ret)) + "*";
+                params.add(ptrType + " _ret" + retCount++);
+            }
+        }
+        String paramsStr = params.isEmpty() ? "void" : String.join(", ", params);
+        return retType + " " + fname + "(" + paramsStr + ")";
+    }
 
     @Override
     public void visit(Program p) {
@@ -71,11 +86,13 @@ public class CodeGenVisitor extends LangVisitor {
             if (d instanceof FunDef) {
                 FunDef fd = (FunDef) d;
                 funDefs.put(fd.getFname(), fd);
+                cg.addPrototype(generateFunctionPrototype(fd));
             } else if (d instanceof DataDef) {
                 DataDef dataDef = (DataDef) d;
                 if (dataDef.getFunctions() != null) {
                     for (FunDef fd : dataDef.getFunctions()) {
                         funDefs.put(fd.getFname(), fd);
+                        cg.addPrototype(generateFunctionPrototype(fd));
                     }
                 }
             }
@@ -139,7 +156,7 @@ public class CodeGenVisitor extends LangVisitor {
         d.getBody().accept(declVisitor);
         ArrayList<String> declarations = new ArrayList<>();
         for (CAttr attr : declVisitor.getDeclarations()) {
-            VType varType = typeOf((CNode)attr.getVar()); 
+            VType varType = typeOf((CNode)attr.getVar());
             String type = toCType(varType);
             String name = attr.getVar().getName();
             declarations.add(cg.decl(name, type));
@@ -151,8 +168,6 @@ public class CodeGenVisitor extends LangVisitor {
         cg.setLastValue(cg.func(fname, params, retType, declarations, body));
         currentFunction.pop();
     }
-    
-    // --- VISITANTES DE COMANDOS ---
     
     @Override
     public void visit(CSeq s) {
@@ -209,21 +224,23 @@ public class CodeGenVisitor extends LangVisitor {
     public void visit(IterateWithVar i) {
         i.getCondExp().accept(this);
         String cond = cg.getLastValue();
-        String varName = i.getIterVar().getName();
+        String varName = ((Var) i.getIterVar()).getName();
         VType condType = typeOf(i.getCondExp());
         
         if (condType instanceof VTyArr && i.getCondExp() instanceof Var) {
             String arrName = ((Var)i.getCondExp()).getName();
-            String sizeVar = arraySizes.getOrDefault(arrName, "0"); 
+            String sizeVar = arraySizes.getOrDefault(arrName, "0");
             
             i.getBody().accept(this);
             String body = cg.getLastValue();
             String elemType = toCType(((VTyArr)condType).getTyArg());
-            cg.setLastValue(cg.iterateArray(varName, arrName, sizeVar, body, elemType));
+            String loopIndexVar = "_idx_" + loopCounter++;
+            cg.setLastValue(cg.iterateArray(varName, arrName, sizeVar, body, elemType, loopIndexVar));
         } else {
              i.getBody().accept(this);
              String body = cg.getLastValue();
-             cg.setLastValue(cg.iterateInt(varName, cond, body));
+             String loopIndexVar = "_idx_" + loopCounter++;
+             cg.setLastValue(cg.iterateInt(varName, cond, body, loopIndexVar));
         }
     }
     
@@ -373,12 +390,12 @@ public class CodeGenVisitor extends LangVisitor {
     @Override public void visit(Not n) { n.getRight().accept(this); cg.setLastValue("!(" + cg.getLastValue() + ")"); }
     @Override public void visit(UMinus u) { u.getRight().accept(this); cg.setLastValue("-(" + cg.getLastValue() + ")"); }
     @Override public void visit(ArrayAccess a) { a.getArrayVar().accept(this); String arr = cg.getLastValue(); a.getIndexExp().accept(this); String idx = cg.getLastValue(); cg.setLastValue(arr + "[" + idx + "]");}
-    @Override 
-    public void visit(DotAccess d) { 
-        d.getRecord().accept(this); 
-        String rec = cg.getLastValue(); 
+    @Override
+    public void visit(DotAccess d) {
+        d.getRecord().accept(this);
+        String rec = cg.getLastValue();
         cg.setLastValue(rec + "->" + d.getFieldName());
-    }    
+    }
     @Override public void visit(NewObject n) {
         String typeName = n.getType().getName();
         String cType = "struct " + typeName;
@@ -403,7 +420,7 @@ public class CodeGenVisitor extends LangVisitor {
         String format = "";
         if (type instanceof VTyInt) format = "\"%d\"";
         else if (type instanceof VTyFloat) format = "\"%f\"";
-        else if (type instanceof VTyChar) format = "\" %c\""; 
+        else if (type instanceof VTyChar) format = "\" %c\"";
         if (!format.isEmpty()) {
             cg.setLastValue("scanf(" + format + ", &" + target + ");");
         } else {
@@ -418,107 +435,4 @@ public class CodeGenVisitor extends LangVisitor {
     @Override public void visit(TyChar t) {}
     @Override public void visit(TyArr t) {}
     @Override public void visit(TyUser t) {}
-
-    private class DeclarationVisitor extends SimpleVisitor {
-        private final LinkedHashSet<CAttr> declarations = new LinkedHashSet<>();
-        private final Set<String> declaredVars = new HashSet<>();
-        private final Hashtable<CNode, VType> typeMap;
-
-        public DeclarationVisitor(Hashtable<CNode, VType> typeMap) {
-            this.typeMap = typeMap;
-        }
-
-        public ArrayList<CAttr> getDeclarations() {
-            return new ArrayList<>(declarations);
-        }
-
-        @Override
-        public void visit(CAttr d) {
-            if (d.getVar() instanceof Var) {
-                String varName = d.getVar().getName();
-                if (!declaredVars.contains(varName)) {
-                    declarations.add(d);
-                    declaredVars.add(varName);
-                }
-            }
-        }
-        @Override
-        public void visit(CSeq s){ 
-            s.getLeft().accept(this); 
-            s.getRight().accept(this); 
-        }
-        @Override
-        public void visit(If i){ i.getThn().accept(this); if(i.getEls() != null) i.getEls().accept(this); }
-        @Override
-        public void visit(Loop l){ l.getBody().accept(this); }
-        @Override
-        public void visit(IterateWithVar i){ i.getBody().accept(this); }
-
-        @Override
-        public void visit(FCallCommand d) {
-            for (LValue target : d.getReturnTargets()) {
-                if (target instanceof Var) {
-                    String varName = target.getName();
-                    if (!declaredVars.contains(varName)) {
-                        declarations.add(new CAttr(target.getLine(), target.getCol(), target, null));
-                        declaredVars.add(varName);
-                    }
-                }
-            }
-        }
-    }
-
-    private class CodeGen {
-        private StringBuilder code = new StringBuilder();
-        private String lastValue;
-
-        public String getCode() { return code.toString(); }
-        public void addCode(String s) { code.append(s); }
-        public String getLastValue() { return lastValue; }
-        public void setLastValue(String s) { lastValue = s; }
-
-        public String binop(String expe, String expd, String op) { return "(" + expe + " " + op + " " + expd + ")"; }
-        public String attr(String lval, String exp) { return lval + " = " + exp + ";"; }
-        public String fcall(String fname, ArrayList<String> args) { return fname + "(" + String.join(", ", args) + ")"; }
-        public String seq(String lft, String rht) { return lft + "\n" + rht; }
-        public String ifStmt(String e, String thn, String els) {
-            String result = "if (" + e + ") {\n\t" + thn.replace("\n", "\n\t") + "\n}";
-            if (els != null && !els.trim().isEmpty() && !els.trim().equals("/* empty */")) {
-                result += " else {\n\t" + els.replace("\n", "\n\t") + "\n}";
-            }
-            return result;
-        }
-        public String loop(String e, String body, String counterVar) { 
-            return "for (int " + counterVar + " = 0; " + counterVar + " < (" + e + "); " + counterVar + "++) {\n\t" + body.replace("\n", "\n\t") + "\n}";
-        }
-        public String iterateInt(String var, String cond, String body) {
-            return "for (int " + var + " = 0; " + var + " < " + cond + "; " + var + "++) {\n\t" + body.replace("\n", "\n\t") + "\n}";
-        }
-        public String iterateArray(String var, String arr, String size, String body, String type) {
-            String i = "_idx_" + loopCounter++;
-            String bodyWithDecl = type + " " + var + " = " + arr + "[" + i + "];\n\t" + body;
-            return "for (int " + i + " = 0; " + i + " < (" + size + "); " + i + "++) {\n\t" + bodyWithDecl.replace("\n","\n\t") + "\n}";
-        }
-        public String returnCMD(String e) { return "return " + e + ";"; }
-        public String printIntCmd(String e) { return "printf(\"%d\", " + e + ");"; }
-        public String printFloatCmd(String e) { return "printf(\"%f\", " + e + ");"; }
-        public String printCharCmd(String e) { return "printf(\"%c\", " + e + ");"; }
-        public String bind(String var, String type) { return type + " " + var; }
-        public String decl(String v, String t) { return t + " " + v + ";"; }
-        public String dataDef(String name, ArrayList<String> decls) { return "struct " + name + " {\n\t" + String.join("\n\t", decls) + "\n};"; }
-        public String func(String id, ArrayList<String> params, String ret, ArrayList<String> decls, String body) {
-            String paramsStr = params.isEmpty() ? "void" : String.join(", ", params);
-            String declBlock = decls.isEmpty() ? "" : "\t" + String.join("\n\t", decls) + "\n";
-            return ret + " " + id + "(" + paramsStr + ") {\n" + declBlock + "\t" + body.replace("\n", "\n\t") + "\n}";
-        }
-        public String program(ArrayList<String> dataDefs, ArrayList<String> flist) {
-            String helpers = String.join("\n\n", helperFunctions);
-
-            return "#include <stdio.h>\n#include <stdlib.h>\n\n" + 
-                   String.join("\n", dataDefs) + "\n\n" +
-                   helpers + "\n\n" + 
-                   String.join("\n\n", flist) +
-                   "\n\nint main() {\n\tinicio();\n\treturn 0;\n}\n";
-        }
-    }
 }
