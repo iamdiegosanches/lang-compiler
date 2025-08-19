@@ -186,6 +186,7 @@ public class TyChecker extends LangVisitor {
         d.getRight().accept(this);
     }
 
+    @Override
     public void visit(CAttr d) {
         d.getExp().accept(this);
         VType expType = stk.pop();
@@ -197,8 +198,12 @@ public class TyChecker extends LangVisitor {
             VType varType = findVar(varName);
 
             if (varType == null) {
+                // Se a variável é nova, a declaramos e MAPeamos seu tipo.
                 declareVar(varName, expType, d.getLine(), d.getCol());
+                typeMap.put((CNode)lvalue, expType); 
             } else {
+                // Se já existe, apenas garantimos que está mapeada e verificamos o tipo.
+                typeMap.put((CNode)lvalue, varType); 
                 if (!varType.match(expType)) {
                     throw new RuntimeException(
                         "Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipos incompatíveis na atribuição para '" + varName + "'. Esperado '" + varType.toString() + "', encontrado '" + expType.toString() + "'."
@@ -239,8 +244,6 @@ public class TyChecker extends LangVisitor {
                 }
             }
         } else if (lvalue instanceof DotAccess) {
-            // A verificação do DotAccess já garante que o tipo do lado esquerdo é um objeto com o campo correto.
-            // Apenas verificamos a compatibilidade de tipo da expressão.
             DotAccess dotAccess = (DotAccess) lvalue;
             dotAccess.accept(this);
             VType dotAccessType = stk.pop();
@@ -248,7 +251,6 @@ public class TyChecker extends LangVisitor {
             if (!dotAccessType.match(expType)) {
                 throw new RuntimeException("Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): Tipos incompatíveis na atribuição a atributo de objeto. Esperado '" + dotAccessType.toString() + "', encontrado '" + expType.toString() + "'.");
             }
-
         } else {
             throw new RuntimeException("Erro Semântico (" + d.getLine() + ", " + d.getCol() + "): LValue de atribuição não suportado.");
         }
@@ -749,7 +751,9 @@ public class TyChecker extends LangVisitor {
 
             if (existingVarType == null) {
                 declareVar(varName, returnType, target.getLine(), target.getCol());
+                typeMap.put((CNode)target, returnType);
             } else {
+                typeMap.put((CNode)target, existingVarType);
                 if (!existingVarType.match(returnType)) {
                     throw new RuntimeException(
                         "Erro Semântico (" + target.getLine() + ", " + target.getCol() +
