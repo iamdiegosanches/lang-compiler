@@ -250,10 +250,27 @@ public class CodeGenVisitor extends LangVisitor {
         String exp = cg.getLastValue();
         VType type = typeOf(p.getExp());
 
-        if (type instanceof VTyInt || type instanceof VTyBool) cg.setLastValue(cg.printIntCmd(exp));
-        else if (type instanceof VTyFloat) cg.setLastValue(cg.printFloatCmd(exp));
-        else if (type instanceof VTyChar) cg.setLastValue(cg.printCharCmd(exp));
-        else cg.setLastValue("/* Print para tipo complexo não implementado */");
+        if (type instanceof VTyBool) {
+            String helperName = "_print_bool";
+            if (!createdHelpers.contains(helperName)) {
+                String helperFunc = "void " + helperName + "(int b) {\n\tif (b) {\n\t\tprintf(\"true\");\n\t} else {\n\t\tprintf(\"false\");\n\t}\n}";
+                helperFunctions.add(helperFunc);
+                createdHelpers.add(helperName);
+            }
+            cg.setLastValue(helperName + "(" + exp + ");");
+        }
+        else if (type instanceof VTyInt) {
+            cg.setLastValue(cg.printIntCmd(exp));
+        }
+        else if (type instanceof VTyFloat) {
+            cg.setLastValue(cg.printFloatCmd(exp));
+        }
+        else if (type instanceof VTyChar) {
+            cg.setLastValue(cg.printCharCmd(exp));
+        }
+        else {
+            cg.setLastValue("/* Print para tipo complexo não implementado */");
+        }
     }
     
     @Override

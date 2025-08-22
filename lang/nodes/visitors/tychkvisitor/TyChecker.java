@@ -313,7 +313,17 @@ public class TyChecker extends LangVisitor {
         enterScope();
         
         String varName = ((Var)d.getIterVar()).getName();
-        declareVar(varName, iterVarTy, d.getLine(), d.getCol());
+        VType existingVar = findVar(varName);
+
+        if (existingVar != null) {
+            if (!existingVar.match(iterVarTy)) {
+                 throw new RuntimeException("Erro de tipo (" + d.getLine() + ", " + d.getCol() + "): A variável de iteração '" + varName + "' é do tipo '" + existingVar + "', mas o 'iterate' esperava o tipo '" + iterVarTy + "'.");
+            }
+            typeMap.put((CNode)d.getIterVar(), existingVar);
+        } else {
+            declareVar(varName, iterVarTy, d.getLine(), d.getCol());
+            typeMap.put((CNode)d.getIterVar(), iterVarTy);
+        }
         
         d.getBody().accept(this);
         leaveScope();
@@ -729,7 +739,7 @@ public class TyChecker extends LangVisitor {
         ArrayList<VType> declaredReturnTypes = funcType.getReturnTypes();
         ArrayList<LValue> returnTargets = d.getReturnTargets();
 
-        if (declaredReturnTypes.size() != returnTargets.size()) {
+        if (!returnTargets.isEmpty() && declaredReturnTypes.size() != returnTargets.size()) {
             throw new RuntimeException(
                 "Erro Semântico (" + d.getLine() + ", " + d.getCol() +
                 "): O número de variáveis (" + returnTargets.size() +
