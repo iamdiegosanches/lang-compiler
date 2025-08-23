@@ -68,6 +68,7 @@ non terminal ArrayList<Def>  defSeq;
 non terminal DataDef         data_def;
 non terminal Decl            decl;
 non terminal ArrayList<Object> data_body_list;
+non terminal ArrayList<Decl>    decl_list;
 non terminal Object          data_item;  
 non terminal Exp             optional_size;
 
@@ -106,15 +107,9 @@ def ::= fun:f               {: RESULT = f; :}
       | data_def:d          {: RESULT = d; :}
       ;
 
-data_def ::= DATA TYID:id OPEN_BRACE data_body_list:dbl CLOSE_BRACE
+data_def ::= DATA TYID:id OPEN_BRACE decl_list:dl CLOSE_BRACE
           {:
-             ArrayList<Decl> attributes = new ArrayList<>();
-             ArrayList<FunDef> functions = new ArrayList<>();
-             for (Object item : dbl) {
-                 if (item instanceof Decl) { attributes.add((Decl) item); }
-                 else if (item instanceof FunDef) { functions.add((FunDef) item); }
-             }
-             RESULT = new DataDef(idleft, idright, id, attributes, functions, false);
+            RESULT = new DataDef(idleft, idright, id, dl, new ArrayList<FunDef>(), false);
           :}
         |  ABSTRACT DATA TYID:id OPEN_BRACE data_body_list:dbl CLOSE_BRACE
           {:
@@ -133,6 +128,12 @@ data_body_list ::= data_item:i data_body_list:dl
                | /* vazio */
                  {: RESULT = new ArrayList<Object>(); :}
                ;
+
+decl_list ::= decl:d decl_list:dl
+                {: dl.add(0, d); RESULT = dl; :}
+              | /* vazio */
+                {: RESULT = new ArrayList<Decl>(); :}
+              ;
 
 data_item ::= decl:d    {: RESULT = d; :}
             | fun:f     {: RESULT = f; :}
